@@ -53,3 +53,8 @@ google-services.json
 freeline.py
 freeline/
 freeline_project_description.json
+
+# c++ temp files
+obj/
+native/
+openCVLibrary330/src/main/libs/
