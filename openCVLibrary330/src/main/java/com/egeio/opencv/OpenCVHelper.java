@@ -1,10 +1,6 @@
 package com.egeio.opencv;
 
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.utils.Converters;
-
-import java.util.List;
+import org.opencv.android.OpenCVLoader;
 
 /**
  * Created by wangjinpeng on 2017/9/15.
@@ -12,18 +8,10 @@ import java.util.List;
 
 public class OpenCVHelper {
 
-    static {
+    public static void init() {
         System.loadLibrary("EgeioOpenCV");
-    }
-
-    public static void findSquares(Mat image, List<MatOfPoint2f> squares) {
-        Mat contours_mat = new Mat();
-        findSquares(image.getNativeObjAddr(), contours_mat.getNativeObjAddr());
-        Converters.Mat_to_vector_vector_Point2f(contours_mat, squares);
-        contours_mat.release();
+        OpenCVLoader.initDebug();
     }
 
     public static native int[] gray(int[] buf, int w, int h);
-
-    public static native void findSquares(long inputImage, long squares_mat_nativeObj);
 }
