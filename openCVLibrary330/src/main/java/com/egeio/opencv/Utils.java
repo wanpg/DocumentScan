@@ -1,7 +1,10 @@
 package com.egeio.opencv;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.util.TypedValue;
 import android.view.Surface;
 import android.view.WindowManager;
 
@@ -18,6 +21,22 @@ import java.util.List;
  */
 
 public class Utils {
+
+    public static void recycle(Bitmap bitmap) {
+        if (bitmap != null) {
+            try {
+                bitmap.recycle();
+            } catch (Exception ignored) {
+            } finally {
+                bitmap = null;
+            }
+        }
+    }
+
+    public static int dp2px(Context context, int dp) {
+        Resources resources = context.getResources();
+        return (int) Math.ceil(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.getDisplayMetrics()));
+    }
 
     public static int getCameraOrientation(Context context) {
         WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);

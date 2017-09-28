@@ -1,7 +1,9 @@
 package com.egeio.opencv;
 
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
@@ -15,7 +17,7 @@ public class SquaresTracker {
 
     private static final String TAG = SquaresTracker.class.getSimpleName();
 
-    final int thresh = 50, N = 3;
+    final int thresh = 10, N = 1;
 
     double angle(Point pt1, Point pt2, Point pt0) {
         double dx1 = pt1.x - pt0.x;
@@ -27,14 +29,15 @@ public class SquaresTracker {
 
     // returns sequence of squares detected on the image.
     // the sequence is stored in the specified memory storage
-    public void findSquares(Mat imageCome, List<List<Point>> squares) {
+    public void findSquares(Mat imageCome, List<List<Point>> squares, float scale) {
         squares.clear();
 
 //        Mat pyr = new Mat();
 //        Mat timg = imageCome.clone();
+        Size imageComeSize = imageCome.size();
         Mat timg = new Mat();
         Imgproc.GaussianBlur(imageCome, timg, new Size(11, 11), 0);
-        Mat gray0 = new Mat(imageCome.size(), CvType.CV_8U);
+        Mat gray0 = new Mat(imageComeSize, CvType.CV_8U);
         Mat gray = new Mat();
 
         // down-scale and upscale the image to filter out the noise
@@ -42,17 +45,15 @@ public class SquaresTracker {
 //        Imgproc.pyrUp(pyr, timg, imageCome.size());
 
         // find squares in every color plane of the image
-        for (int c = 0; c < 1; c++) {
-//            int ch[] = {c, 0};
-//
-//            List<Mat> timgList = new ArrayList<>();
-//            timgList.add(timg);
-//            List<Mat> gray0List = new ArrayList<>();
-//            gray0List.add(gray0);
-//            MatOfInt matOfInt = new MatOfInt(ch);
-//            Core.mixChannels(timgList, gray0List, matOfInt);// 将给定图片的某个通道改为另一个通道颜色
+        for (int c = 0; c < 3; c++) {
+            int ch[] = {c, 0};
 
-            gray0 = timg.clone();
+            List<Mat> timgList = new ArrayList<>();
+            timgList.add(timg);
+            List<Mat> gray0List = new ArrayList<>();
+            gray0List.add(gray0);
+            MatOfInt matOfInt = new MatOfInt(ch);
+            Core.mixChannels(timgList, gray0List, matOfInt);// 将给定图片的某个通道改为另一个通道颜色
 
             // try several threshold levels
             for (int l = 0; l < N; l++) {
@@ -61,7 +62,7 @@ public class SquaresTracker {
                 if (l == 0) {
                     // apply Canny. Take the upper threshold from slider
                     // and set the lower to 0 (which forces edges merging)
-                    Imgproc.Canny(gray0, gray, 0, thresh, 5, false);
+                    Imgproc.Canny(gray0, gray, thresh, thresh * 2, 3, false);
                     // dilate canny output to remove potential
                     // holes between edge segments
                     Imgproc.dilate(gray, gray, new Mat(), new Point(-1, -1), 1);
@@ -101,7 +102,7 @@ public class SquaresTracker {
                             &&
                             points.size() == 4
                             &&
-                            Math.abs(Imgproc.contourArea(matOfPoint1 = Utils.copy2MatPoint(approx))) > 128/*40*/ /*1000*/
+                            Math.abs(Imgproc.contourArea(matOfPoint1 = Utils.copy2MatPoint(approx))) > 1024 * scale
                             &&
                             Imgproc.isContourConvex(matOfPoint2 = Utils.copy2MatPoint(approx))) {
                         double maxCosine = 0;
