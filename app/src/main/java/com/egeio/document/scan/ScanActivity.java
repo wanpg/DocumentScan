@@ -1,15 +1,18 @@
 package com.egeio.document.scan;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.ScanFragment;
+import com.egeio.opencv.ScanManagerInterface;
 import com.egeio.opencv.tools.Utils;
 
-public class ScanActivity extends AppCompatActivity {
+public class ScanActivity extends AppCompatActivity implements ScanManagerInterface {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -28,5 +31,19 @@ public class ScanActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         Utils.clearFolder(Utils.getSaveFolder(this));
+    }
+
+    @Override
+    public void gotoEdit() {
+        Intent intent = new Intent(this, EditActivity.class);
+        intent.putExtra("SCAN_INFO_ARRAY", scanDataManager.getScanInfoArrayList());
+        startActivity(intent);
+    }
+
+    ScanDataManager scanDataManager = new ScanDataManager();
+
+    @Override
+    public ScanDataManager getManager() {
+        return scanDataManager;
     }
 }

@@ -8,6 +8,8 @@ import android.util.TypedValue;
 import android.view.Surface;
 import android.view.WindowManager;
 
+import com.egeio.opencv.model.PointD;
+
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -104,19 +106,6 @@ public class Utils {
             matResult = mat.clone();
         }
         return matResult;
-    }
-
-    public static int getCvRotateTypeByCamera(Context context) {
-        int cameraOrientation = Utils.getCameraOrientation(context);
-        if (cameraOrientation == 90) {
-            return Core.ROTATE_90_CLOCKWISE;
-        } else if (cameraOrientation == 180) {
-            return Core.ROTATE_180;
-        } else if (cameraOrientation == 270) {
-            return Core.ROTATE_90_COUNTERCLOCKWISE;
-        } else {
-            return -1;
-        }
     }
 
     public static MatOfPoint2f copy2MatPoint2f(MatOfPoint mat) {
@@ -274,7 +263,7 @@ public class Utils {
      * @param p4
      * @return
      */
-    public static Point calCenter(Point p1, Point p2, Point p3, Point p4) {
+    public static PointD calCenter(PointD p1, PointD p2, PointD p3, PointD p4) {
         return calCenter(calCenter(p1, p3), calCenter(p2, p4));
     }
 
@@ -285,109 +274,105 @@ public class Utils {
      * @param p2
      * @return
      */
-    public static Point calCenter(Point p1, Point p2) {
-        return new Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
+    public static PointD calCenter(PointD p1, PointD p2) {
+        return new PointD((p1.x + p2.x) / 2, (p1.y + p2.y) / 2);
     }
 
-    public static List<Point> sortPoints(List<Point> points) {
-        List<Point> pointTemp = new ArrayList<>(points);
-        Collections.sort(pointTemp, new Comparator<Point>() {
-            @Override
-            public int compare(Point o1, Point o2) {
-                double v = o1.x - o2.x;
-                if (v > 0) {
-                    return 1;
-                } else if (v < 0) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-        List<Point> points1 = pointTemp.subList(0, 2);
-        Collections.sort(points1, new Comparator<Point>() {
-            @Override
-            public int compare(Point o1, Point o2) {
-                double v = o1.y - o2.y;
-                if (v > 0) {
-                    return 1;
-                } else if (v < 0) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-            }
-        });
-        Point topLeft = points1.get(0);
-        int indexOfTopLeft = points.indexOf(topLeft);
-        if (indexOfTopLeft > 0) {
-            List<Point> points2 = points.subList(indexOfTopLeft, points.size());
-            points2.addAll(points.subList(0, indexOfTopLeft));
-            return points2;
+    public static void sortPoints(List<Point> points) {
+        if (points == null) {
+            return;
         }
-        return points;
+        if (points.isEmpty()) {
+            return;
+        }
+        Point min = null, max = null;
+        for (Point point : points) {
+            if (min == null) {
+                min = new Point(point.x, point.y);
+            } else {
+                min.x = Math.min(point.x, min.x);
+                min.y = Math.min(point.y, min.y);
+            }
+            if (max == null) {
+                max = new Point(point.x, point.y);
+            } else {
+                max.x = Math.max(point.x, max.x);
+                max.y = Math.max(point.y, max.y);
+            }
+        }
+
+        final Point center = new Point((min.x + max.x) / 2, (min.y + max.y) / 2);
+
+        Collections.sort(points, new Comparator<Point>() {
+            @Override
+            public int compare(Point o1, Point o2) {
+                return (int) Math.ceil(calAngle(center, o1) - calAngle(center, o2));
+            }
+        });
+
+        Point topLeft = points.get(0).x < points.get(1).x ? points.get(0) : points.get(1);
+        Point topRight = points.get(0).x < points.get(1).x ? points.get(1) : points.get(0);
+        Point bottomRight = points.get(2).x < points.get(3).x ? points.get(3) : points.get(2);
+        Point bottomLeft = points.get(2).x < points.get(3).x ? points.get(2) : points.get(3);
+
+        points.clear();
+        points.add(topLeft);
+        points.add(topRight);
+        points.add(bottomRight);
+        points.add(bottomLeft);
     }
 
-    public static Mat PerspectiveTransform(Mat src, List<Point> startCoords) {
+    private static double calAngle(Point center, Point point) {
+        double theta = Math.atan2(point.y - center.y, point.x - point.x);
+        double angle = Math.floor((Math.PI - Math.PI / 4 + theta) % (2 * Math.PI));
+        return angle;
+    }
+
+    public static Mat warpPerspective(Mat src, List<Point> startCoords) {
         if (startCoords.size() != 4) return null;
 
-        double width1, width2, height1, height2, avgw, avgh;
-
-        startCoords = sortPoints(startCoords);
+        sortPoints(startCoords);
+        Size size = calPerspectiveSize(src.cols(), src.rows(), startCoords);
 
         List<Point> resultCoords = new ArrayList<>();
-
-        width1 = distance(startCoords.get(0), startCoords.get(1));
-        width2 = distance(startCoords.get(2), startCoords.get(3));
-        height1 = distance(startCoords.get(0), startCoords.get(3));
-        height2 = distance(startCoords.get(1), startCoords.get(2));
-        avgw = (width1 + width2) / 2;
-        avgh = (height1 + height2) / 2;
-
         resultCoords.add(new Point(0, 0));
-        resultCoords.add(new Point(avgw - 1, 0));
-        resultCoords.add(new Point(avgw - 1, avgh - 1));
-        resultCoords.add(new Point(0, avgh - 1));
+        resultCoords.add(new Point(size.width, 0));
+        resultCoords.add(new Point(size.width, size.height));
+        resultCoords.add(new Point(0, size.height));
 
         Mat start = Converters.vector_Point2f_to_Mat(startCoords);
         Mat result = Converters.vector_Point2d_to_Mat(resultCoords);
         start.convertTo(start, CvType.CV_32FC2);
         result.convertTo(result, CvType.CV_32FC2);
 
-        Size size = new Size(avgw, avgh);
         Mat mat = new Mat(size, CvType.CV_8UC1);
         Mat perspective = Imgproc.getPerspectiveTransform(start, result);
         Imgproc.warpPerspective(src, mat, perspective, size);
         return mat;
     }
 
-    /**
-     * 透视变形
-     *
-     * @param mat
-     * @param points
-     * @return
-     */
-    public static Mat warpPerspective(Mat mat, List<Point> points) {
 
+    public static Size calPerspectiveSize(double width, double height, List<Point> points) {
+        // 排序
         List<Point> points1 = new ArrayList<>(points);
-        //此处查找左上角定焦的点
+
+        Collections.swap(points1, 2, 3);
 
         // image center
-        double u0 = (mat.cols()) / 2.0f;
-        double v0 = (mat.rows()) / 2.0f;
+        double u0 = width / 2.0f;
+        double v0 = height / 2.0f;
 
-        double width1 = distance(points1.get(0), points1.get(1));
-        double width2 = distance(points1.get(2), points1.get(3));
+        double w1 = distance(points1.get(0), points1.get(1));
+        double w2 = distance(points1.get(2), points1.get(3));
 
-        double height1 = distance(points1.get(0), points1.get(2));
-        double height2 = distance(points1.get(1), points1.get(3));
+        double h1 = distance(points1.get(0), points1.get(2));
+        double h2 = distance(points1.get(1), points1.get(3));
 
-        double width = Math.max(width1, width2);
-        double height = Math.max(height1, height2);
+        double w = Math.max(w1, w2);
+        double h = Math.max(h1, h2);
 
         // visible aspect ratio
-        double ar_vis = width / height;
+        double ar_vis = w / h;
 
         // make numpy arrays and append 1 for linear algebra
         double[] m1 = new double[]{points1.get(0).x, points1.get(0).y, 1};
@@ -410,7 +395,7 @@ public class Utils {
         double n32 = n3[1];
         double n33 = n3[2];
 
-        double f = Math.sqrt(-(1.0 / (n23 * n33)) * ((n21 * n31 - (n21 * n33 + n23 * n31) * u0 + n23 * n33 * u0 * u0) + (n22 * n32 - (n22 * n33 + n23 * n32) * v0 + n23 * n33 * v0 * v0)));
+        double f = Math.sqrt(Math.abs(-(1.0 / (n23 * n33)) * ((n21 * n31 - (n21 * n33 + n23 * n31) * u0 + n23 * n33 * u0 * u0) + (n22 * n32 - (n22 * n33 + n23 * n32) * v0 + n23 * n33 * v0 * v0))));
 
         double[][] A = new double[][]{
                 new double[]{f, 0, u0},
@@ -428,27 +413,13 @@ public class Utils {
 
         int W, H;
         if (ar_real < ar_vis) {
-            W = (int) width;
+            W = (int) w;
             H = (int) (W / ar_real);
         } else {
-            H = (int) height;
+            H = (int) h;
             W = (int) (ar_real * H);
         }
-        List<Point> points2 = new ArrayList<>();
-        points2.add(new Point(0, 0));
-        points2.add(new Point(W, 0));
-        points2.add(new Point(0, H));
-        points2.add(new Point(W, H));
-        Mat pts1 = Converters.vector_Point_to_Mat(points1);
-        Mat pts2 = Converters.vector_Point_to_Mat(points2);
-        pts1.convertTo(pts1, CvType.CV_32FC2);
-        pts2.convertTo(pts2, CvType.CV_32FC2);
-        //project the image with the new w/h
 
-        Mat perspectiveTransform = Imgproc.getPerspectiveTransform(pts1, pts2);
-        Size size = new Size(W, H);
-        Mat dst = new Mat(size, CvType.CV_8UC1);
-        Imgproc.warpPerspective(mat, dst, perspectiveTransform, size);
-        return dst;
+        return new Size(W, H);
     }
 }

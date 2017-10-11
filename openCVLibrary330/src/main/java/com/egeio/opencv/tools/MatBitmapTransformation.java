@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
+import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.ScanInfo;
 
 import org.opencv.android.Utils;
@@ -50,25 +51,47 @@ public class MatBitmapTransformation extends BitmapTransformation {
             return toTransform;
         } else {
             Mat frameMat = new Mat();
+            // 转换bitmap为mat
             Utils.bitmapToMat(toTransform, frameMat);
+
+            // 旋转
             Mat rotatedMat;
-            int cvRotateTypeByCamera = com.egeio.opencv.tools.Utils.getCvRotateTypeByCamera(context);
-            if (cvRotateTypeByCamera != -1) {
-                rotatedMat = new Mat();
-                Core.rotate(frameMat, rotatedMat, cvRotateTypeByCamera);
-                frameMat.release();
-            } else {
-                rotatedMat = frameMat;
+            switch (rotateAngle) {
+                case angle_90:
+                    rotatedMat = new Mat();
+                    Core.rotate(frameMat, rotatedMat, Core.ROTATE_90_CLOCKWISE);
+                    frameMat.release();
+                    break;
+                case angle_180:
+                    rotatedMat = new Mat();
+                    Core.rotate(frameMat, rotatedMat, Core.ROTATE_180);
+                    frameMat.release();
+                    break;
+                case angle_270:
+                    rotatedMat = new Mat();
+                    Core.rotate(frameMat, rotatedMat, Core.ROTATE_90_COUNTERCLOCKWISE);
+                    frameMat.release();
+                    break;
+                default:
+                    rotatedMat = frameMat;
+                    break;
             }
+
+            // 截取拉伸
             float ratioW = 1f * rotatedMat.width() / imgWidth;
             float ratioH = 1f * rotatedMat.height() / imgHeight;
             Bitmap bitmap;
-            ArrayList<Point> points = scanInfo.getCurrentPointInfo().getPoints();
+            List<PointD> pointDList = scanInfo.getCurrentPointInfo().getPoints();
             List<Point> pointList = new ArrayList<>();
-            for (Point point : points) {
+            for (PointD point : pointDList) {
                 pointList.add(new Point(point.x * ratioW, point.y * ratioH));
             }
-            Mat mat = com.egeio.opencv.tools.Utils.PerspectiveTransform(rotatedMat, pointList);
+            Mat mat = com.egeio.opencv.tools.Utils.warpPerspective(rotatedMat, pointList);
+
+            // 优化
+
+
+
             bitmap = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
             Utils.matToBitmap(mat, bitmap);
             mat.release();

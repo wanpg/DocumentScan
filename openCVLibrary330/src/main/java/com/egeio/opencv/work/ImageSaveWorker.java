@@ -3,11 +3,11 @@ package com.egeio.opencv.work;
 import android.content.Context;
 import android.hardware.Camera;
 
+import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.Utils;
 
-import org.opencv.core.Point;
 import org.opencv.core.Size;
 
 import java.util.ArrayList;
@@ -65,23 +65,22 @@ public abstract class ImageSaveWorker extends Worker {
                 new Size(previewWidth, previewHeight),
                 tempSize);
 
-        List<Point> points = new ArrayList<>();
+        List<PointD> points = new ArrayList<>();
         PointInfo pointInfoTemp;
         if (pointInfo == null) {
-            points.add(new Point(0, 0));
-            points.add(new Point(size.width, 0));
-            points.add(new Point(size.width, size.height));
-            points.add(new Point(0, size.height));
+            points.add(new PointD(0, 0));
+            points.add(new PointD(size.width, 0));
+            points.add(new PointD(size.width, size.height));
+            points.add(new PointD(0, size.height));
             pointInfoTemp = new PointInfo(points);
         } else {
-            for (Point point : pointInfo.getPoints()) {
-                points.add(new Point(point.x / squareFindScale * scale, point.y / squareFindScale * scale));
+            for (PointD point : pointInfo.getPoints()) {
+                points.add(new PointD(point.x / squareFindScale * scale, point.y / squareFindScale * scale));
             }
             pointInfoTemp = new PointInfo(points, pointInfo.getTime());
         }
         String savePath = Utils.getSavePath(context);
-        ScanInfo scanInfo = new ScanInfo(savePath, pointInfoTemp, originAngle);
-        scanInfo.setRotateAngle(cameraOrientation);// 初始化旋转角度
+        ScanInfo scanInfo = new ScanInfo(savePath, pointInfoTemp, cameraOrientation);
         onImageCropPreview(scanInfo, pointInfo);
         Utils.saveBufferToFile(imageBuffer, savePath);
         onImageSaved(scanInfo);

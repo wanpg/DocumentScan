@@ -2,6 +2,8 @@ package com.egeio.opencv.work;
 
 import android.util.Log;
 
+import com.egeio.opencv.model.PointD;
+import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.SquaresTracker;
 import com.egeio.opencv.tools.Utils;
@@ -21,7 +23,7 @@ public abstract class SquareFindWorker extends Worker {
 
     public abstract Mat getFrameMat();
 
-    public abstract void onPointsFind(List<Point> points);
+    public abstract void onPointsFind(List<PointD> points);
 
     private float defaultScale;
 
@@ -64,7 +66,7 @@ public abstract class SquareFindWorker extends Worker {
             }
             if (matList.size() > 0) {
                 List<Point> largestList = Utils.findLargestList(matList);
-                onPointsFind(largestList);
+                onPointsFind(CvUtils.point2pointD(largestList));
             } else {
                 onPointsFind(null);
             }

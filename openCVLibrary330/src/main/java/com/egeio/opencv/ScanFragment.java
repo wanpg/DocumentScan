@@ -1,5 +1,6 @@
 package com.egeio.opencv;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Bundle;
@@ -18,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.Debug;
@@ -44,7 +46,6 @@ public class ScanFragment extends Fragment {
      * 预览图按照这个比率缩小进行边框查找
      */
     private final float squareFindScale = 0.125f;
-    private final ArrayList<ScanInfo> scanInfoArrayList = new ArrayList<>();
     private final ArrayList<PointInfo> pointInfoArrayList = new ArrayList<>();
 
     private View mContainer;
@@ -53,6 +54,14 @@ public class ScanFragment extends Fragment {
     Debug debug = new Debug(ScanFragment.class.getSimpleName());
 
     private Handler handler = new Handler();
+
+    ScanManagerInterface scanManagerInterface;
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        scanManagerInterface = (ScanManagerInterface) getActivity();
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -79,6 +88,12 @@ public class ScanFragment extends Fragment {
                 @Override
                 public void onClick(View view) {
                     takePhoto();
+                }
+            });
+            thumbnail.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    scanManagerInterface.gotoEdit();
                 }
             });
         }
@@ -135,12 +150,12 @@ public class ScanFragment extends Fragment {
                             bitmap = Bitmap.createBitmap(frameMat.width(), frameMat.height(), Bitmap.Config.RGB_565);
                             Utils.matToBitmap(frameMat, bitmap);
                         } else {
-                            ArrayList<Point> points = pointInfo.getPoints();
+                            ArrayList<PointD> points = pointInfo.getPoints();
                             List<Point> pointList = new ArrayList<>();
-                            for (Point point : points) {
+                            for (PointD point : points) {
                                 pointList.add(new Point(point.x / squareFindScale, point.y / squareFindScale));
                             }
-                            Mat mat = com.egeio.opencv.tools.Utils.PerspectiveTransform(frameMat, pointList);
+                            Mat mat = com.egeio.opencv.tools.Utils.warpPerspective(frameMat, pointList);
                             bitmap = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
                             Utils.matToBitmap(mat, bitmap);
                             mat.release();
@@ -154,7 +169,7 @@ public class ScanFragment extends Fragment {
 
                     @Override
                     public void onImageSaved(ScanInfo scanInfo) {
-                        scanInfoArrayList.add(scanInfo);
+                        scanManagerInterface.getManager().addScanInfo(scanInfo);
                         debug.end("保存图片");
                         showThumbnail();
                     }
@@ -168,6 +183,7 @@ public class ScanFragment extends Fragment {
         handler.post(new Runnable() {
             @Override
             public void run() {
+                ArrayList<ScanInfo> scanInfoArrayList = scanManagerInterface.getManager().getScanInfoArrayList();
                 if (scanInfoArrayList.isEmpty()) {
                     return;
                 }
@@ -175,6 +191,7 @@ public class ScanFragment extends Fragment {
                 Glide.with(ScanFragment.this)
                         .load(scanInfo.getPath())
                         .asBitmap()
+                        .atMost()
                         .transform(new MatBitmapTransformation(getContext(), scanInfo))
                         .into(thumbnail);
             }
@@ -272,7 +289,7 @@ public class ScanFragment extends Fragment {
             }
 
             @Override
-            public void onPointsFind(List<Point> points) {
+            public void onPointsFind(List<PointD> points) {
                 if (points != null && !points.isEmpty()) {
                     scanInfoView.setPoint(points, squareFindScale / cameraView.getScaleRatio());
                     pointInfoArrayList.add(new PointInfo(points));

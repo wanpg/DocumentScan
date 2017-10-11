@@ -1,16 +1,18 @@
 package com.egeio.opencv.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+import com.egeio.opencv.tools.CvUtils;
+
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.utils.Converters;
-
-import java.io.Serializable;
 
 /**
  * Created by wangjinpeng on 2017/10/9.
  */
 
-public class ScanInfo implements Serializable {
+public class ScanInfo implements Parcelable {
 
     public enum Angle {
         angle_0(0), angle_90(90), angle_180(180), angle_270(270);
@@ -78,6 +80,42 @@ public class ScanInfo implements Serializable {
         currentPointInfo = new PointInfo(originPointInfo);
     }
 
+    protected ScanInfo(Parcel in) {
+        path = in.readString();
+        originPointInfo = in.readParcelable(PointInfo.class.getClassLoader());
+        currentPointInfo = in.readParcelable(PointInfo.class.getClassLoader());
+        isOptimized = in.readByte() != 0;
+        originAngle = Angle.valueOf(in.readInt());
+        rotateAngle = Angle.valueOf(in.readInt());
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(path);
+        dest.writeParcelable(originPointInfo, flags);
+        dest.writeParcelable(currentPointInfo, flags);
+        dest.writeByte((byte) (isOptimized ? 1 : 0));
+        dest.writeInt(originAngle.value);
+        dest.writeInt(rotateAngle.value);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<ScanInfo> CREATOR = new Creator<ScanInfo>() {
+        @Override
+        public ScanInfo createFromParcel(Parcel in) {
+            return new ScanInfo(in);
+        }
+
+        @Override
+        public ScanInfo[] newArray(int size) {
+            return new ScanInfo[size];
+        }
+    };
+
     public PointInfo getCurrentPointInfo() {
         return currentPointInfo;
     }
@@ -107,7 +145,7 @@ public class ScanInfo implements Serializable {
     }
 
     public boolean matchSize(int width, int height) {
-        Mat mat = Converters.vector_Point_to_Mat(currentPointInfo.getPoints());
+        Mat mat = CvUtils.pointToMat(currentPointInfo.getPoints());
         double area = Imgproc.contourArea(mat);
         if (Math.abs(area - width * height) < 0.1d) {
             return true;

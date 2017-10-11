@@ -72,7 +72,7 @@ public class Number {
         RealMatrix matrix = new Array2DRowRealMatrix(arr2);
         double[] result = new double[arr2.length];
         for (int i = 0; i < arr2.length; i++) {
-            result[i] = realVector.dotProduct(matrix.getRowVector(i));
+            result[i] = realVector.dotProduct(matrix.getColumnVector(i));
         }
         return result;
     }

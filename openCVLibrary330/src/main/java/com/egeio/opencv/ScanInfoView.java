@@ -12,9 +12,8 @@ import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.View;
 
+import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.tools.Utils;
-
-import org.opencv.core.Point;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,12 +36,12 @@ public class ScanInfoView extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
-    private final List<Point> pointList = new ArrayList<>();
+    private final List<PointD> pointList = new ArrayList<>();
     private Bitmap thumbnail;
     float scale = 1f;
     Paint paint;
 
-    public synchronized void setPoint(List<Point> pointList, float scale) {
+    public synchronized void setPoint(List<PointD> pointList, float scale) {
         this.scale = scale;
         this.pointList.clear();
         if (pointList != null) {
@@ -72,7 +71,7 @@ public class ScanInfoView extends View {
         }
     }
 
-    private void drawPoint(Canvas canvas, List<Point> pointList) {
+    private void drawPoint(Canvas canvas, List<PointD> pointList) {
         if (canvas != null) {
             if (thumbnail != null && !thumbnail.isRecycled()) {
                 canvas.drawBitmap(thumbnail, 0, 0, null);
@@ -95,7 +94,7 @@ public class ScanInfoView extends View {
 
                 canvas.drawPath(path, paint);
 
-                Point center = Utils.calCenter(pointList.get(0), pointList.get(1), pointList.get(2), pointList.get(3));
+                PointD center = Utils.calCenter(pointList.get(0), pointList.get(1), pointList.get(2), pointList.get(3));
                 canvas.drawCircle((float) center.x / scale, (float) center.y / scale, 30, paint);
             }
         }
