@@ -11,14 +11,20 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.ViewGroup;
 
+import com.egeio.opencv.tools.Debug;
+import com.egeio.opencv.tools.Utils;
+
 import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * 照相机View，会将照相机按照比例fit给surfaceView
@@ -32,6 +38,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
     private byte[] buffer;
     private Debug debug;
     private JavaCameraFrame javaCameraFrame;
+    private float scaleRatio = 1f;
 
     public CameraView(Context context) {
         super(context);
@@ -105,8 +112,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         if (javaCameraFrame != null) {
             javaCameraFrame.release();
         }
-        javaCameraFrame = new JavaCameraFrame(new Mat(previewSize.height + (previewSize.height / 2), previewSize.width, CvType.CV_8UC1),
-                previewSize.width, previewSize.height, camera.getParameters().getPreviewFormat());
+        javaCameraFrame = new JavaCameraFrame(previewSize.width, previewSize.height, camera.getParameters().getPreviewFormat());
     }
 
     private void openCamera() {
@@ -123,9 +129,78 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
             final Camera.Parameters params = camera.getParameters();
 //          params.setSceneMode(Camera.Parameters.SCENE_MODE_BARCODE);
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            Camera.Size bestPreviewSize = findBestPreviewSize(params);
+            Camera.Size bestPictureSize = findBestPictureSize(params, bestPreviewSize);
+            params.setPreviewSize(bestPreviewSize.width, bestPreviewSize.height);
+            params.setPictureSize(bestPictureSize.width, bestPictureSize.height);
             camera.setParameters(params);
         }
         camera.setDisplayOrientation(Utils.getCameraOrientation(getContext()));
+    }
+
+    private Camera.Size findBestPictureSize(Camera.Parameters parameters, Camera.Size previewSize) {
+        List<Camera.Size> supportedPictureSizes = parameters.getSupportedPictureSizes();
+        // 从大到小排列
+        Collections.sort(supportedPictureSizes, new Comparator<Camera.Size>() {
+            @Override
+            public int compare(Camera.Size o1, Camera.Size o2) {
+                int area1 = o1.width * o1.height;
+                int area2 = o2.width * o2.height;
+                if (area1 < area2) {
+                    return 1;
+                } else if (area1 > area2) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        float previewRatio = 1f * previewSize.width / previewSize.height;
+        for (Camera.Size size : supportedPictureSizes) {
+            float ratio = 1f * size.width / size.height;
+            if (Math.abs(previewRatio - ratio) < 0.01f) {
+                return size;
+            }
+        }
+        return supportedPictureSizes.get(0);
+    }
+
+    private Camera.Size findBestPreviewSize(Camera.Parameters parameters) {
+        float previewRatio = 1f * getWidth() / getHeight();
+        int cameraOrientation = Utils.getCameraOrientation(getContext());
+        List<Camera.Size> previewSizes = parameters.getSupportedPreviewSizes();
+        // 从大到小排列
+        Collections.sort(previewSizes, new Comparator<Camera.Size>() {
+            @Override
+            public int compare(Camera.Size o1, Camera.Size o2) {
+                int area1 = o1.width * o1.height;
+                int area2 = o2.width * o2.height;
+                if (area1 < area2) {
+                    return 1;
+                } else if (area1 > area2) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        List<Camera.Size> matchList = new ArrayList<>();
+        for (Camera.Size size : previewSizes) {
+            int width = cameraOrientation == 90 || cameraOrientation == 270 ? size.height : size.width;
+            int height = cameraOrientation == 90 || cameraOrientation == 270 ? size.width : size.height;
+            float ratio = 1f * width / height;
+            if (Math.abs(previewRatio - ratio) < 0.3f) {
+                matchList.add(0, size);
+            }
+        }
+        if (!matchList.isEmpty()) {
+            for (Camera.Size size : matchList) {
+                if (size.width * size.height > getWidth() * getHeight()) {
+                    return size;
+                }
+            }
+        }
+        return previewSizes.get(0);
     }
 
     private void releaseCamera() {
@@ -135,15 +210,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         }
     }
 
-    private void startPreviewDisplay(SurfaceHolder holder) {
+    public void startPreviewDisplay() {
         try {
             Camera.Parameters parameters = camera.getParameters();
             Camera.Size previewSize = parameters.getPreviewSize();
             int size = previewSize.width * previewSize.height * ImageFormat.getBitsPerPixel(parameters.getPreviewFormat()) / 8;
-            buffer = new byte[size];
+            if (buffer == null || buffer.length != size) {
+                buffer = new byte[size];
+            }
             camera.addCallbackBuffer(buffer);
             camera.setPreviewCallbackWithBuffer(this);
-            camera.setPreviewDisplay(holder);
             camera.startPreview();
             camera.cancelAutoFocus();
         } catch (Exception e) {
@@ -151,7 +227,16 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         }
     }
 
-    private void stopPreviewDisplay() {
+    private void startPreviewDisplay(SurfaceHolder holder) {
+        try {
+            camera.setPreviewDisplay(holder);
+            startPreviewDisplay();
+        } catch (Exception e) {
+            Log.e(TAG, "Error while START preview for camera", e);
+        }
+    }
+
+    public void stopPreviewDisplay() {
         try {
             camera.stopPreview();
         } catch (Exception e) {
@@ -174,7 +259,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
                     debug.end("缩放");
                 }
                 debug.start("旋转");
-                return rotateMat(mat);
+                return Utils.rotateMatByCamera(getContext(), mat);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -185,53 +270,53 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         return null;
     }
 
-    private Mat rotateMat(Mat mat) {
-        Mat matResult = null;
-        int cameraOrientation = Utils.getCameraOrientation(getContext());
-        if (cameraOrientation == 90) {
-            matResult = new Mat();
-            Core.rotate(mat, matResult, Core.ROTATE_90_CLOCKWISE);
-        } else if (cameraOrientation == 180) {
-            matResult = new Mat();
-            Core.rotate(mat, matResult, Core.ROTATE_180);
-        } else if (cameraOrientation == 270) {
-            matResult = new Mat();
-            Core.rotate(mat, matResult, Core.ROTATE_90_COUNTERCLOCKWISE);
-        } else {
-            matResult = mat.clone();
-        }
-        return matResult;
-    }
-
-    private float scaleRatio = 1f;
-
     public float getScaleRatio() {
         return scaleRatio;
     }
 
     private void fitCameraView() {
         Camera.Size previewSize = camera.getParameters().getPreviewSize();
-        if (previewSize != null) {
-            ViewGroup.LayoutParams layoutParams = getLayoutParams();
-            if (layoutParams != null) {
-                float widthRatio = 1f * getWidth() / Math.min(previewSize.width, previewSize.height);
-                float heightRatio = 1f * getHeight() / Math.max(previewSize.width, previewSize.height);
-                // 以最小边放大绘制
-                if (widthRatio < heightRatio) {
-                    // 以高为基准绘制
-                    scaleRatio = heightRatio;
-                    layoutParams.width = (int) (heightRatio * Math.min(previewSize.width, previewSize.height));
-                } else {
-                    // 以宽为基准绘制
-                    scaleRatio = widthRatio;
-                    layoutParams.height = (int) (widthRatio * Math.max(previewSize.width, previewSize.height));
-                }
-                requestLayout();
+        ViewGroup.LayoutParams layoutParams = getLayoutParams();
+        if (previewSize != null && layoutParams != null) {
+            float widthRatio = 1f * getWidth() / Math.min(previewSize.width, previewSize.height);
+            float heightRatio = 1f * getHeight() / Math.max(previewSize.width, previewSize.height);
+            // 以最小边放大绘制
+            if (widthRatio < heightRatio) {
+                // 以高为基准绘制
+                scaleRatio = heightRatio;
+                layoutParams.width = (int) (heightRatio * Math.min(previewSize.width, previewSize.height));
+            } else {
+                // 以宽为基准绘制
+                scaleRatio = widthRatio;
+                layoutParams.height = (int) (widthRatio * Math.max(previewSize.width, previewSize.height));
             }
+            requestLayout();
         }
     }
 
-    private class JavaCameraFrame implements CameraBridgeViewBase.CvCameraViewFrame {
+    private boolean isWaitForPhoto = false;
+
+    public synchronized void takePhoto(final Camera.PictureCallback pictureCallback) {
+        synchronized (this) {
+            if (camera == null || isWaitForPhoto) {
+                return;
+            }
+            isWaitForPhoto = true;
+        }
+        camera.takePicture(null, null, new Camera.PictureCallback() {
+            @Override
+            public void onPictureTaken(byte[] data, Camera camera) {
+                synchronized (CameraView.this) {
+                    isWaitForPhoto = false;
+                }
+                if (pictureCallback != null) {
+                    pictureCallback.onPictureTaken(data, camera);
+                }
+            }
+        });
+    }
+
+    private static class JavaCameraFrame implements CameraBridgeViewBase.CvCameraViewFrame {
         @Override
         public Mat gray() {
             return mYuvFrameData.submat(0, mHeight, 0, mWidth);
@@ -249,8 +334,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
             return mRgba;
         }
 
+        public JavaCameraFrame(int width, int height, int previewFormat) {
+            this(new Mat(height + height / 2, width, CvType.CV_8UC1), width, height, previewFormat);
+        }
+
         public JavaCameraFrame(Mat Yuv420sp, int width, int height, int previewFormat) {
-            super();
             mWidth = width;
             mHeight = height;
             mYuvFrameData = Yuv420sp;
@@ -278,11 +366,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
             return mYuvFrameData == null || mYuvFrameData.empty();
         }
 
-        private int previewFormat;
-
         private Mat mYuvFrameData;
+
         private Mat mRgba;
         private int mWidth;
         private int mHeight;
+        private int previewFormat;
     }
 }

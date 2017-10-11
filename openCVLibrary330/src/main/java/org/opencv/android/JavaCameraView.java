@@ -193,7 +193,7 @@ public class JavaCameraView extends CameraBridgeViewBase implements PreviewCallb
 
                     mCamera.addCallbackBuffer(mBuffer);
                     mCamera.setPreviewCallbackWithBuffer(this);
-                    mCamera.setDisplayOrientation(com.egeio.opencv.Utils.getCameraOrientation(getContext()));
+                    mCamera.setDisplayOrientation(com.egeio.opencv.tools.Utils.getCameraOrientation(getContext()));
 
                     mFrameChain = new Mat[2];
                     mFrameChain[0] = new Mat(mFrameHeight + (mFrameHeight / 2), mFrameWidth, CvType.CV_8UC1);

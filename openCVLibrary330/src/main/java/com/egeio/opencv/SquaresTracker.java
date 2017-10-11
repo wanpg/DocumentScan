@@ -1,5 +1,7 @@
 package com.egeio.opencv;
 
+import com.egeio.opencv.tools.Utils;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -17,7 +19,7 @@ public class SquaresTracker {
 
     private static final String TAG = SquaresTracker.class.getSimpleName();
 
-    final int thresh = 10, N = 1;
+    final int thresh = 10, N = 2;
 
     double angle(Point pt1, Point pt2, Point pt0) {
         double dx1 = pt1.x - pt0.x;

@@ -6,7 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Window;
 import android.view.WindowManager;
 
-import com.egeio.opencv.DocumentScanFragment;
+import com.egeio.opencv.ScanFragment;
+import com.egeio.opencv.tools.Utils;
 
 public class ScanActivity extends AppCompatActivity {
 
@@ -15,9 +16,17 @@ public class ScanActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE); // 隐藏应用程序的标题栏，即当前activity的label
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); // 隐藏android系统的状态栏
-
+        if (savedInstanceState != null) {
+            Utils.clearFolder(Utils.getSaveFolder(this));
+        }
         getSupportFragmentManager().beginTransaction()
-                .replace(Window.ID_ANDROID_CONTENT, new DocumentScanFragment())
+                .replace(Window.ID_ANDROID_CONTENT, new ScanFragment())
                 .commit();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Utils.clearFolder(Utils.getSaveFolder(this));
     }
 }

@@ -1,4 +1,4 @@
-package com.egeio.opencv;
+package com.egeio.opencv.tools;
 
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -43,5 +43,13 @@ public class Debug {
 
     public void setEnable(boolean enable) {
         this.enable = enable;
+    }
+
+    public void d(String info) {
+        Log.d(tag, info);
+    }
+
+    public void i(String info) {
+        Log.i(tag, info);
     }
 }

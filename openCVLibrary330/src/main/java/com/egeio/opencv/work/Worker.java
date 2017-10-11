@@ -1,4 +1,4 @@
-package com.egeio.opencv;
+package com.egeio.opencv.work;
 
 public abstract class Worker implements Runnable {
 
