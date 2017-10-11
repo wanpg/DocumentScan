@@ -1,6 +1,7 @@
 package com.egeio.opencv.work;
 
 import android.content.Context;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 
 import com.egeio.opencv.model.PointD;
@@ -80,9 +81,12 @@ public abstract class ImageSaveWorker extends Worker {
             pointInfoTemp = new PointInfo(points, pointInfo.getTime());
         }
         String savePath = Utils.getSavePath(context);
-        ScanInfo scanInfo = new ScanInfo(savePath, pointInfoTemp, cameraOrientation);
-        onImageCropPreview(scanInfo, pointInfo);
+        
+        onImageCropPreview(new ScanInfo(savePath, pointInfoTemp, cameraOrientation, 0, 0), pointInfo);
         Utils.saveBufferToFile(imageBuffer, savePath);
-        onImageSaved(scanInfo);
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(savePath, options);
+        onImageSaved(new ScanInfo(savePath, pointInfoTemp, cameraOrientation, options.outWidth, options.outHeight));
     }
 }

@@ -46,6 +46,9 @@ public class ScanInfo implements Parcelable {
      */
     private final String path;
 
+
+    private final int originWidth, originHeight;
+
     /**
      * 原始检测的四个点
      */
@@ -72,10 +75,12 @@ public class ScanInfo implements Parcelable {
     private boolean isOptimized = true;
 
 
-    public ScanInfo(String path, PointInfo pointInfo, int angle) {
+    public ScanInfo(String path, PointInfo pointInfo, int angle, int originWidth, int originHeight) {
         this.path = path;
         this.originPointInfo = new PointInfo(pointInfo);
         this.originAngle = Angle.valueOf(angle);
+        this.originWidth = originWidth;
+        this.originHeight = originHeight;
         rotateAngle = originAngle;
         currentPointInfo = new PointInfo(originPointInfo);
     }
@@ -87,6 +92,8 @@ public class ScanInfo implements Parcelable {
         isOptimized = in.readByte() != 0;
         originAngle = Angle.valueOf(in.readInt());
         rotateAngle = Angle.valueOf(in.readInt());
+        originWidth = in.readInt();
+        originHeight = in.readInt();
     }
 
     @Override
@@ -97,6 +104,8 @@ public class ScanInfo implements Parcelable {
         dest.writeByte((byte) (isOptimized ? 1 : 0));
         dest.writeInt(originAngle.value);
         dest.writeInt(rotateAngle.value);
+        dest.writeInt(originWidth);
+        dest.writeInt(originHeight);
     }
 
     @Override
@@ -128,12 +137,34 @@ public class ScanInfo implements Parcelable {
         return rotateAngle;
     }
 
-    public void setRotateAngle(Angle rotateAngle) {
-        this.rotateAngle = rotateAngle;
-    }
+    public void rotateTo(int value) {
+        int changeAngle = (value + 360 - rotateAngle.getValue()) % 360;
 
-    public void setRotateAngle(int rotateAngle) {
-        this.rotateAngle = Angle.valueOf(rotateAngle);
+        int width = rotateAngle == Angle.angle_90 || rotateAngle == Angle.angle_270 ? originHeight : originWidth;
+        int height = rotateAngle == Angle.angle_90 || rotateAngle == Angle.angle_270 ? originWidth : originHeight;
+
+        this.rotateAngle = Angle.valueOf(value);
+        // 此处根据旋转的角度将坐标进行变换
+        if (changeAngle == 90) {
+            for (PointD pointD : currentPointInfo.getPoints()) {
+                double x = height - pointD.y;
+                double y = pointD.x;
+                pointD.x = x;
+                pointD.y = y;
+            }
+        } else if (changeAngle == 180) {
+            for (PointD pointD : currentPointInfo.getPoints()) {
+                pointD.x = width - pointD.x;
+                pointD.y = height - pointD.y;
+            }
+        } else if (changeAngle == 270) {
+            for (PointD pointD : currentPointInfo.getPoints()) {
+                double x = pointD.y;
+                double y = width - pointD.x;
+                pointD.x = x;
+                pointD.y = y;
+            }
+        }
     }
 
     public boolean isOptimized() {

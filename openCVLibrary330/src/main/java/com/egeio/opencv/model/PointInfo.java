@@ -3,10 +3,6 @@ package com.egeio.opencv.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.egeio.opencv.tools.CvUtils;
-
-import org.opencv.core.Point;
-
 import java.util.ArrayList;
 import java.util.List;
 
