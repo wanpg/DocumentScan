@@ -3,7 +3,6 @@ package com.egeio.opencv.edit;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -62,6 +61,15 @@ public class EditFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
+                ScanInfo scanInfo = scanInfoArrayList.get(currentItem);
+                if (scanInfo != null) {
+                    scanInfo.setOptimized(!scanInfo.isOptimized());
+                    String tag = FragmentPagerAdapter.makeFragmentName(viewPager.getId(), pagerAdapter.getItemId(currentItem));
+                    Fragment fragmentByTag = getChildFragmentManager().findFragmentByTag(tag);
+                    if (fragmentByTag != null && fragmentByTag instanceof ImagePreviewFragment) {
+                        ((ImagePreviewFragment) fragmentByTag).updateScanInfo(scanInfo);
+                    }
+                }
 
             }
         });

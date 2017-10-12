@@ -36,10 +36,9 @@ public class SquaresTracker {
 
 //        Mat pyr = new Mat();
 //        Mat timg = imageCome.clone();
-        Size imageComeSize = imageCome.size();
         Mat timg = new Mat();
         Imgproc.GaussianBlur(imageCome, timg, new Size(11, 11), 0);
-        Mat gray0 = new Mat(imageComeSize, CvType.CV_8U);
+        Mat gray0 = new Mat(imageCome.rows(), imageCome.cols(), CvType.CV_8U);
         Mat gray = new Mat();
 
         // down-scale and upscale the image to filter out the noise

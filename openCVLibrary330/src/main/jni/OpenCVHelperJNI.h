@@ -15,6 +15,9 @@ extern "C" {
 JNIEXPORT jintArray JNICALL Java_com_egeio_opencv_OpenCVHelper_gray
   (JNIEnv *, jclass, jintArray, jint, jint);
 
+JNIEXPORT void JNICALL Java_com_egeio_opencv_OpenCVHelper_changeContrastAndBrightness
+    (JNIEnv *, jclass, jlong, jlong,  jdouble, jint);
+
 #ifdef __cplusplus
 }
 #endif

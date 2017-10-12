@@ -50,4 +50,24 @@ JNIEXPORT jintArray JNICALL Java_com_egeio_opencv_OpenCVHelper_gray(
     env->ReleaseIntArrayElements(buf, cbuf, 0);
     return result;
 }
+
+JNIEXPORT void JNICALL Java_com_egeio_opencv_OpenCVHelper_changeContrastAndBrightness
+    (JNIEnv *env, jclass obj, jlong src_mat, jlong dst_mat, double alpha, int beta)
+{
+    Mat& image  = *(Mat*)src_mat;
+    Mat& new_image = *(Mat*)dst_mat;
+
+    /// Do the operation new_image(i,j) = alpha*image(i,j) + beta
+     for( int y = 0; y < image.rows; y++ )
+     {
+        for( int x = 0; x < image.cols; x++ )
+        {
+            for( int c = 0; c < 3; c++ )
+            {
+                new_image.at<Vec3b>(y,x)[c] = saturate_cast<uchar>( alpha*( image.at<Vec3b>(y,x)[c] ) + beta );
+            }
+        }
+     }
+}
+
 }

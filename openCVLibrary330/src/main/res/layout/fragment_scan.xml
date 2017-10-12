@@ -4,74 +4,71 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <FrameLayout
+    <com.egeio.opencv.CameraView
+        android:id="@+id/camera_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <com.egeio.opencv.ScanInfoView
+        android:id="@+id/scan_info"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="46dp">
+        android:layout_marginBottom="97dp" />
 
-        <com.egeio.opencv.CameraView
-            android:id="@+id/camera_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+    <RelativeLayout
+        android:id="@+id/bottom"
+        android:layout_width="match_parent"
+        android:layout_height="97dp"
+        android:layout_gravity="bottom"
+        android:background="@android:color/white">
 
-        <com.egeio.opencv.ScanInfoView
-            android:id="@+id/scan_info"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_marginBottom="64dp" />
+            android:gravity="center"
+            android:paddingLeft="25dp"
+            android:paddingRight="25dp"
+            android:text="取消"
+            android:textColor="#747b93"
+            android:textSize="16sp" />
 
-        <RelativeLayout
-            android:id="@+id/bottom"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:layout_gravity="bottom"
-            android:background="@android:color/black">
+        <ImageView
+            android:id="@+id/lens"
+            android:layout_width="67dp"
+            android:layout_height="67dp"
+            android:layout_centerInParent="true"
+            android:scaleType="fitCenter"
+            android:src="@drawable/shot_selector" />
 
-            <TextView
-                android:id="@+id/cancel"
-                android:layout_width="52dp"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="取消"
-                android:textColor="@android:color/white" />
-
-            <ImageView
-                android:id="@+id/lens"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:layout_centerInParent="true"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_lens_white_24dp" />
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true">
 
             <ImageView
                 android:id="@+id/thumbnail"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentRight="true"
-                android:layout_centerVertical="true"
-                android:layout_margin="10dp" />
-        </RelativeLayout>
+                android:layout_width="47dp"
+                android:layout_height="47dp"
+                android:layout_margin="25dp"
+                android:scaleType="centerCrop" />
+        </FrameLayout>
 
-        <ImageView
-            android:id="@+id/thumbnail_preview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:scaleType="fitXY" />
-    </FrameLayout>
+    </RelativeLayout>
 
+    <ImageView
+        android:id="@+id/flash"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:padding="10dp"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_flash_on" />
 
-    <LinearLayout
-        android:id="@+id/top"
-        android:layout_width="match_parent"
-        android:layout_height="46dp"
-        android:layout_gravity="top"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="46dp"
-            android:layout_height="match_parent"
-            android:scaleType="center"
-            android:src="@drawable/ic_flash_auto_white_24dp" />
-    </LinearLayout>
+    <ImageView
+        android:id="@+id/thumbnail_preview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scaleType="fitCenter" />
 </FrameLayout>

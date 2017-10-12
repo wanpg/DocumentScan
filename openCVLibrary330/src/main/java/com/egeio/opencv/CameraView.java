@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 照相机View，会将照相机按照比例fit给surfaceView
@@ -242,6 +243,32 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         } catch (Exception e) {
             Log.e(TAG, "Error while STOP preview for camera", e);
         }
+    }
+
+    public void toggleFlash() {
+        try {
+            if (camera != null) {
+                Camera.Parameters parameters = camera.getParameters();
+                String flashMode = parameters.getFlashMode();
+                if (Camera.Parameters.FLASH_MODE_OFF.equals(flashMode)) {
+                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                } else {
+                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                }
+                camera.setParameters(parameters);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean isFlashOn() {
+        if (camera != null) {
+            Camera.Parameters parameters = camera.getParameters();
+            String flashMode = parameters.getFlashMode();
+            return !Camera.Parameters.FLASH_MODE_OFF.equals(flashMode);
+        }
+        return false;
     }
 
     public synchronized Mat getFrameMat(float scale) {

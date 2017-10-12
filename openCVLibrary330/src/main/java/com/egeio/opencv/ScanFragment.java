@@ -41,7 +41,7 @@ public class ScanFragment extends Fragment {
 
     private CameraView cameraView;
     private ScanInfoView scanInfoView;
-    private ImageView thumbnail, thumbnailPreview;
+    private ImageView thumbnail, thumbnailPreview, flash;
     /**
      * 预览图按照这个比率缩小进行边框查找
      */
@@ -78,6 +78,7 @@ public class ScanFragment extends Fragment {
             scanInfoView = mContainer.findViewById(R.id.scan_info);
             thumbnail = mContainer.findViewById(R.id.thumbnail);
             thumbnailPreview = mContainer.findViewById(R.id.thumbnail_preview);
+            flash = mContainer.findViewById(R.id.flash);
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -96,8 +97,20 @@ public class ScanFragment extends Fragment {
                     scanManagerInterface.gotoEdit();
                 }
             });
+            flash.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    cameraView.toggleFlash();
+                    changeFlashResource();
+                }
+            });
         }
         return mContainer;
+    }
+
+
+    void changeFlashResource() {
+        flash.setImageResource(cameraView.isFlashOn() ? R.drawable.ic_flash_on : R.drawable.ic_flash_off);
     }
 
     @Override
@@ -107,6 +120,7 @@ public class ScanFragment extends Fragment {
             cameraView.onResume();
         }
         startSquareFind();
+        changeFlashResource();
     }
 
     @Override
@@ -116,6 +130,7 @@ public class ScanFragment extends Fragment {
             cameraView.onPause();
         }
         stopSquareFind();
+        changeFlashResource();
     }
 
     @Override

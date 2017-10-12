@@ -7,18 +7,18 @@
     <RelativeLayout
         android:id="@+id/area_title"
         android:layout_width="match_parent"
-        android:layout_height="42dp"
+        android:layout_height="wrap_content"
         android:background="@android:color/white">
 
         <ImageView
-            android:layout_width="42dp"
-            android:layout_height="42dp" />
+            android:layout_width="44dp"
+            android:layout_height="44dp" />
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/area_operate"
         android:layout_width="match_parent"
-        android:layout_height="42dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:paddingLeft="25dp"
         android:paddingRight="25dp">
@@ -29,16 +29,22 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="18dp"
+            android:paddingTop="15dp">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_cut_out" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="裁剪" />
+                android:layout_marginTop="2dp"
+                android:text="裁剪"
+                android:textColor="#9198b2"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -47,16 +53,22 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="18dp"
+            android:paddingTop="15dp">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_filters" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="优化" />
+                android:layout_marginTop="2dp"
+                android:text="优化"
+                android:textColor="#9198b2"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -65,16 +77,22 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="18dp"
+            android:paddingTop="15dp">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_rotating" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="旋转" />
+                android:layout_marginTop="2dp"
+                android:text="旋转"
+                android:textColor="#9198b2"
+                android:textSize="12sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -83,16 +101,22 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="18dp"
+            android:paddingTop="15dp">
 
             <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_delete" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="删除" />
+                android:layout_marginTop="2dp"
+                android:text="删除"
+                android:textColor="#9198b2"
+                android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
 

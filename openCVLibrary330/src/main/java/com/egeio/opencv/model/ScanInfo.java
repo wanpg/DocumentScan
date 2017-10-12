@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import com.egeio.opencv.tools.CvUtils;
 
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 /**
@@ -175,12 +176,31 @@ public class ScanInfo implements Parcelable {
         isOptimized = optimized;
     }
 
-    public boolean matchSize(int width, int height) {
+    public boolean matchSize(double width, double height) {
         Mat mat = CvUtils.pointToMat(currentPointInfo.getPoints());
         double area = Imgproc.contourArea(mat);
         if (Math.abs(area - width * height) < 0.1d) {
             return true;
         }
         return false;
+    }
+
+    /**
+     * 获取path存储的图片的宽高
+     *
+     * @return
+     */
+    public Size getOriginSize() {
+        return new Size(originWidth, originHeight);
+    }
+
+    /**
+     * 获取当前角度的size
+     * @return
+     */
+    public Size getCurrentSize() {
+        int imgWidth = rotateAngle == ScanInfo.Angle.angle_90 || rotateAngle == ScanInfo.Angle.angle_270 ? originHeight : originWidth;
+        int imgHeight = rotateAngle == ScanInfo.Angle.angle_90 || rotateAngle == ScanInfo.Angle.angle_270 ? originWidth : originHeight;
+        return new Size(imgWidth, imgHeight);
     }
 }
