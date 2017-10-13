@@ -28,6 +28,12 @@ public class ScanActivity extends AppCompatActivity implements ScanManagerInterf
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        Utils.hideSystemUI(this);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         Utils.clearFolder(Utils.getSaveFolder(this));

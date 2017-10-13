@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black">
@@ -12,23 +13,22 @@
     <com.egeio.opencv.ScanInfoView
         android:id="@+id/scan_info"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="97dp" />
+        android:layout_height="match_parent" />
 
     <RelativeLayout
         android:id="@+id/bottom"
         android:layout_width="match_parent"
-        android:layout_height="97dp"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@android:color/white">
 
         <TextView
             android:id="@+id/cancel"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
             android:gravity="center"
-            android:paddingLeft="25dp"
-            android:paddingRight="25dp"
+            android:padding="25dp"
             android:text="取消"
             android:textColor="#747b93"
             android:textSize="16sp" />
@@ -43,16 +43,16 @@
 
         <FrameLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true">
 
             <ImageView
                 android:id="@+id/thumbnail"
-                android:layout_width="47dp"
-                android:layout_height="47dp"
-                android:layout_margin="25dp"
+                android:layout_width="@dimen/thumbnail_size"
+                android:layout_height="@dimen/thumbnail_size"
+                android:layout_margin="@dimen/thumbnail_margin"
                 android:scaleType="centerCrop" />
         </FrameLayout>
 
@@ -64,11 +64,17 @@
         android:layout_height="54dp"
         android:padding="10dp"
         android:scaleType="fitXY"
-        android:src="@drawable/ic_flash_on" />
+        app:srcCompat="@drawable/ic_flash_on" />
 
-    <ImageView
-        android:id="@+id/thumbnail_preview"
-        android:layout_width="wrap_content"
+    <FrameLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scaleType="fitCenter" />
+        android:layout_margin="@dimen/thumbnail_margin">
+
+        <com.egeio.opencv.view.PreviewImageView
+            android:id="@+id/thumbnail_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="@dimen/thumbnail_preview_bottom_margin" />
+    </FrameLayout>
 </FrameLayout>

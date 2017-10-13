@@ -103,6 +103,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
     }
 
     public void onPause() {
+        toggleFlash(false);
     }
 
     public void release() {
@@ -127,6 +128,9 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         }
         if (camera == null) {
             camera = Camera.open();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                camera.enableShutterSound(true);
+            }
             final Camera.Parameters params = camera.getParameters();
 //          params.setSceneMode(Camera.Parameters.SCENE_MODE_BARCODE);
             params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
@@ -246,15 +250,14 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
     }
 
     public void toggleFlash() {
+        toggleFlash(!isFlashOn());
+    }
+
+    public void toggleFlash(boolean on) {
         try {
             if (camera != null) {
                 Camera.Parameters parameters = camera.getParameters();
-                String flashMode = parameters.getFlashMode();
-                if (Camera.Parameters.FLASH_MODE_OFF.equals(flashMode)) {
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-                } else {
-                    parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                }
+                parameters.setFlashMode(on ? Camera.Parameters.FLASH_MODE_TORCH : Camera.Parameters.FLASH_MODE_OFF);
                 camera.setParameters(parameters);
             }
         } catch (Exception e) {
@@ -273,28 +276,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
 
     public synchronized Mat getFrameMat(float scale) {
         Mat mat = null;
-        try {
-            debug.start("转换照相机数据");
-            debug.end("转换照相机数据");
-            if (!javaCameraFrame.isEmpty()) {
-                if (scale == 1) {
-                    mat = javaCameraFrame.rgba().clone();
-                } else {
-                    debug.start("缩放");
-                    mat = new Mat();
-                    Imgproc.resize(javaCameraFrame.rgba(), mat, new Size(), scale, scale, Imgproc.INTER_LINEAR);
-                    debug.end("缩放");
-                }
-                debug.start("旋转");
-                return Utils.rotateMatByCamera(getContext(), mat);
+        debug.start("转换照相机数据");
+        if (!javaCameraFrame.isEmpty()) {
+            if (scale == 1) {
+                mat = javaCameraFrame.rgba().clone();
+            } else {
+                debug.start("缩放");
+                mat = new Mat();
+                Imgproc.resize(javaCameraFrame.rgba(), mat, new Size(), scale, scale, Imgproc.INTER_LINEAR);
+                debug.end("缩放");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (mat != null)
-                mat.release();
         }
-        return null;
+        debug.end("转换照相机数据");
+        return mat;
+    }
+
+    public Size getPreviewSize() {
+        final Camera.Parameters parameters = camera.getParameters();
+        final Camera.Size previewSize = parameters.getPreviewSize();
+        return new Size(previewSize.width, previewSize.height);
     }
 
     public float getScaleRatio() {
@@ -330,17 +330,25 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
             }
             isWaitForPhoto = true;
         }
-        camera.takePicture(null, null, new Camera.PictureCallback() {
-            @Override
-            public void onPictureTaken(byte[] data, Camera camera) {
-                synchronized (CameraView.this) {
-                    isWaitForPhoto = false;
-                }
-                if (pictureCallback != null) {
-                    pictureCallback.onPictureTaken(data, camera);
-                }
-            }
-        });
+        camera.takePicture(
+                new Camera.ShutterCallback() {
+                    @Override
+                    public void onShutter() {
+
+                    }
+                },
+                null,
+                new Camera.PictureCallback() {
+                    @Override
+                    public void onPictureTaken(byte[] data, Camera camera) {
+                        synchronized (CameraView.this) {
+                            isWaitForPhoto = false;
+                        }
+                        if (pictureCallback != null) {
+                            pictureCallback.onPictureTaken(data, camera);
+                        }
+                    }
+                });
     }
 
     private static class JavaCameraFrame implements CameraBridgeViewBase.CvCameraViewFrame {

@@ -80,9 +80,9 @@ public class ScanInfoView extends View {
             if (pointList != null && pointList.size() == 4) {
                 if (paint == null) {
                     paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    paint.setColor(Color.YELLOW);
+                    paint.setColor(Color.parseColor("#3296FF"));
                     paint.setStyle(Paint.Style.STROKE);
-                    paint.setStrokeWidth(Utils.dp2px(getContext(), 2));
+                    paint.setStrokeWidth(Utils.dp2px(getContext(), 2.5f));
                 }
 
                 Path path = new Path();
@@ -94,8 +94,8 @@ public class ScanInfoView extends View {
 
                 canvas.drawPath(path, paint);
 
-                PointD center = Utils.calCenter(pointList.get(0), pointList.get(1), pointList.get(2), pointList.get(3));
-                canvas.drawCircle((float) center.x / scale, (float) center.y / scale, 30, paint);
+//                PointD center = Utils.calCenter(pointList.get(0), pointList.get(1), pointList.get(2), pointList.get(3));
+//                canvas.drawCircle((float) center.x / scale, (float) center.y / scale, 30, paint);
             }
         }
     }

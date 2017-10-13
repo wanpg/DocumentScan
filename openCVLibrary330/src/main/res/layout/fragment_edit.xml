@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white">
@@ -36,7 +37,7 @@
             <ImageView
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/ic_cut_out" />
+                app:srcCompat="@drawable/ic_cut_out" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -60,7 +61,7 @@
             <ImageView
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/ic_filters" />
+                app:srcCompat="@drawable/ic_filters" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -84,7 +85,7 @@
             <ImageView
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/ic_rotating" />
+                app:srcCompat="@drawable/ic_rotating" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -108,7 +109,7 @@
             <ImageView
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/ic_delete" />
+                app:srcCompat="@drawable/ic_delete" />
 
             <TextView
                 android:layout_width="wrap_content"

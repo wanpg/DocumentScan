@@ -1,7 +1,6 @@
 package com.egeio.opencv.work;
 
 import android.content.Context;
-import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 
 import com.egeio.opencv.model.PointD;
@@ -41,7 +40,7 @@ public abstract class ImageSaveWorker extends Worker {
         this.squareFindScale = squareFindScale;
     }
 
-    public abstract void onImageCropPreview(ScanInfo scanInfo, PointInfo pointInfo);
+    public abstract void onImageCropPreview(ScanInfo scanInfo);
 
     public abstract void onImageSaved(ScanInfo scanInfo);
 
@@ -52,18 +51,12 @@ public abstract class ImageSaveWorker extends Worker {
         Camera.Size pictureSize = parameters.getPictureSize();
         int cameraOrientation = Utils.getCameraOrientation(context);
 
-        int rotatedBmWidth = cameraOrientation == 90 || cameraOrientation == 270 ? pictureSize.height : pictureSize.width;
-        int rotatedBmHeight = cameraOrientation == 90 || cameraOrientation == 270 ? pictureSize.width : pictureSize.height;
-
-        int previewWidth = cameraOrientation == 90 || cameraOrientation == 270 ? previewSize.height : previewSize.width;
-        int previewHeight = cameraOrientation == 90 || cameraOrientation == 270 ? previewSize.width : previewSize.height;
-
         // 此处根据比例对point做一次位置偏移
         Size tempSize = new Size();
         Size size = new Size();
         double scale = Utils.calApproximateSize(
-                new Size(rotatedBmWidth, rotatedBmHeight),
-                new Size(previewWidth, previewHeight),
+                new Size(pictureSize.width, pictureSize.height),
+                new Size(previewSize.width, previewSize.height),
                 tempSize);
 
         List<PointD> points = new ArrayList<>();
@@ -81,12 +74,10 @@ public abstract class ImageSaveWorker extends Worker {
             pointInfoTemp = new PointInfo(points, pointInfo.getTime());
         }
         String savePath = Utils.getSavePath(context);
-        
-        onImageCropPreview(new ScanInfo(savePath, pointInfoTemp, cameraOrientation, 0, 0), pointInfo);
+
+        ScanInfo scanInfo = new ScanInfo(savePath, pointInfoTemp, cameraOrientation, pictureSize.width, pictureSize.height);
+        onImageCropPreview(scanInfo);
         Utils.saveBufferToFile(imageBuffer, savePath);
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(savePath, options);
-        onImageSaved(new ScanInfo(savePath, pointInfoTemp, cameraOrientation, options.outWidth, options.outHeight));
+        onImageSaved(scanInfo);
     }
 }

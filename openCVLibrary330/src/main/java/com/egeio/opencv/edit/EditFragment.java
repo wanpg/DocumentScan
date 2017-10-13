@@ -84,14 +84,13 @@ public class EditFragment extends Fragment {
                     if (value >= 360) {
                         value = value % 360;
                     }
-                    scanInfo.rotateTo(value);
+                    scanInfo.setRotateAngle(value);
                     String tag = FragmentPagerAdapter.makeFragmentName(viewPager.getId(), pagerAdapter.getItemId(currentItem));
                     Fragment fragmentByTag = getChildFragmentManager().findFragmentByTag(tag);
                     if (fragmentByTag != null && fragmentByTag instanceof ImagePreviewFragment) {
-                        ((ImagePreviewFragment) fragmentByTag).updateScanInfo(scanInfo);
+                        ((ImagePreviewFragment) fragmentByTag).rotate(scanInfo);
                     }
                 }
-
             }
         });
         areaDelete.setOnClickListener(new View.OnClickListener() {

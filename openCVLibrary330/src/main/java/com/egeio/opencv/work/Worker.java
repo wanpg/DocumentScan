@@ -18,4 +18,27 @@ public abstract class Worker implements Runnable {
     public final void run() {
         doWork();
     }
+
+    protected void assertWorkStopped() {
+        if (isWorkerStopped()) {
+            throw new WorkStoppedException("Work has been stopped");
+        }
+    }
+
+    public static class WorkStoppedException extends IllegalStateException {
+        public WorkStoppedException() {
+        }
+
+        public WorkStoppedException(String s) {
+            super(s);
+        }
+
+        public WorkStoppedException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public WorkStoppedException(Throwable cause) {
+            super(cause);
+        }
+    }
 }

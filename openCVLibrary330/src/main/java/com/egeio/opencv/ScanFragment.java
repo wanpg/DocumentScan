@@ -1,5 +1,8 @@
 package com.egeio.opencv;
 
+import android.animation.Animator;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
@@ -7,31 +10,29 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
-import android.view.animation.ScaleAnimation;
-import android.view.animation.TranslateAnimation;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.ImageViewTarget;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
+import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.tools.MatBitmapTransformation;
+import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.work.ImageSaveWorker;
 import com.egeio.opencv.work.SquareFindWorker;
 
 import org.opencv.R;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
@@ -41,7 +42,8 @@ public class ScanFragment extends Fragment {
 
     private CameraView cameraView;
     private ScanInfoView scanInfoView;
-    private ImageView thumbnail, thumbnailPreview, flash;
+    private ImageView thumbnail, flash;
+    private PreviewImageView thumbnailPreview;
     /**
      * 预览图按照这个比率缩小进行边框查找
      */
@@ -142,43 +144,42 @@ public class ScanFragment extends Fragment {
     }
 
     private void takePhoto() {
+        stopSquareFind();
+        final PointInfo pointInfo = findBestPointInfo();
+        if (pointInfo != null) {
+            final Size previewSize = cameraView.getPreviewSize();
+            scanInfoView.setPoint(
+                    CvUtils.rotatePoints(pointInfo.getPoints(), previewSize.width * squareFindScale, previewSize.height * squareFindScale, com.egeio.opencv.tools.Utils.getCameraOrientation(getContext())),
+                    squareFindScale / cameraView.getScaleRatio());
+        } else {
+            scanInfoView.clear();
+        }
         cameraView.takePhoto(new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] bytes, final Camera camera) {
-                stopSquareFind();
                 cameraView.stopPreviewDisplay();
                 ImageSaveWorker pictureWorker = new ImageSaveWorker(
                         getContext(),
                         bytes,
                         camera,
-                        pointInfoArrayList.isEmpty() ? null : pointInfoArrayList.get(pointInfoArrayList.size() - 1),
+                        pointInfo,
                         squareFindScale) {
 
                     @Override
-                    public void onImageCropPreview(ScanInfo scanInfo, PointInfo pointInfo) {
+                    public void onImageCropPreview(ScanInfo scanInfo) {
                         // 此处做预览预览动画
                         debug.start("生成预览缩略图");
+                        // 未旋转的图片
                         Mat frameMat = cameraView.getFrameMat(1);
-                        Bitmap bitmap;
-                        if (pointInfo == null) {
-                            //原图
-                            bitmap = Bitmap.createBitmap(frameMat.width(), frameMat.height(), Bitmap.Config.RGB_565);
-                            Utils.matToBitmap(frameMat, bitmap);
-                        } else {
-                            ArrayList<PointD> points = pointInfo.getPoints();
-                            List<Point> pointList = new ArrayList<>();
-                            for (PointD point : points) {
-                                pointList.add(new Point(point.x / squareFindScale, point.y / squareFindScale));
-                            }
-                            Mat mat = com.egeio.opencv.tools.Utils.warpPerspective(frameMat, pointList);
-                            bitmap = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
-                            Utils.matToBitmap(mat, bitmap);
-                            mat.release();
-                        }
+                        // 进行自动优化转换
+                        frameMat = CvUtils.formatFromScanInfo(frameMat, scanInfo);
+                        // 转换为Bitmap
+                        Bitmap bitmap = Bitmap.createBitmap(frameMat.width(), frameMat.height(), Bitmap.Config.RGB_565);
+                        Utils.matToBitmap(frameMat, bitmap);
                         frameMat.release();
                         debug.end("生成预览缩略图");
                         // dismiss loading 并且执行动画从全屏到右下角
-                        thumbnailPreviewAnimation(bitmap);
+                        thumbnailPreviewAnimation(bitmap, scanInfo.getRotateAngle());
                         debug.start("保存图片");
                     }
 
@@ -189,9 +190,39 @@ public class ScanFragment extends Fragment {
                         showThumbnail();
                     }
                 };
+                pointInfoArrayList.clear();
                 new Thread(pictureWorker).start();
             }
         });
+    }
+
+    /**
+     * 找到往前推最合适的point info
+     *
+     * @return
+     */
+    private PointInfo findBestPointInfo() {
+        if (pointInfoArrayList.isEmpty()) {
+            return null;
+        }
+
+        final long currentTimeMillis = System.currentTimeMillis();
+        PointInfo pointInfoLargest = null;
+        for (PointInfo pointInfo : pointInfoArrayList) {
+            final long timeDis = currentTimeMillis - pointInfo.getTime();
+            if (timeDis < 0 || timeDis > 500) {
+                continue;
+            }
+            if (pointInfoLargest == null) {
+                pointInfoLargest = pointInfo;
+            } else {
+                if (Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints())) >=
+                        Imgproc.contourArea(CvUtils.pointToMat(pointInfoLargest.getPoints()))) {
+                    pointInfoLargest = pointInfo;
+                }
+            }
+        }
+        return pointInfoLargest;
     }
 
     private void showThumbnail() {
@@ -202,76 +233,80 @@ public class ScanFragment extends Fragment {
                 if (scanInfoArrayList.isEmpty()) {
                     return;
                 }
-                ScanInfo scanInfo = scanInfoArrayList.get(scanInfoArrayList.size() - 1);
+                final ScanInfo scanInfo = scanInfoArrayList.get(scanInfoArrayList.size() - 1);
+                final Size originSize = scanInfo.getOriginSize();
+                // 变换后的size
+                final Size perSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(scanInfo.getCurrentPointInfo().getPoints()));
+                final int thumbnailSize = getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
+                double scale = thumbnailSize / Math.max(perSize.width, perSize.height);
+                int tarSize = (int) (Math.max(originSize.width, originSize.height) * scale);
                 Glide.with(ScanFragment.this)
                         .load(scanInfo.getPath())
                         .asBitmap()
                         .atMost()
                         .transform(new MatBitmapTransformation(getContext(), scanInfo))
-                        .into(thumbnail);
+                        .override(tarSize, tarSize)
+                        .into(new ImageViewTarget<Bitmap>(thumbnail) {
+                            @Override
+                            protected void setResource(Bitmap resource) {
+                                thumbnail.setImageBitmap(resource);
+                                thumbnail.setRotation(scanInfo.getRotateAngle().getValue());
+                            }
+                        });
             }
         });
     }
 
     private SoftReference<Bitmap> cachedPreviewBitmap;
 
-    private synchronized void thumbnailPreviewAnimation(final Bitmap bitmap) {
+    private synchronized void thumbnailPreviewAnimation(final Bitmap bitmap, final ScanInfo.Angle angle) {
         handler.post(new Runnable() {
             @Override
             public void run() {
                 debug.start("动画设置");
                 cachedPreviewBitmap = new SoftReference<>(bitmap);
-                thumbnailPreview.setImageBitmap(cachedPreviewBitmap.get());
-                int width = bitmap.getWidth();
-                int height = bitmap.getHeight();
+                thumbnailPreview.setBitmap(cachedPreviewBitmap.get());
+                thumbnailPreview.setRotateAngle(angle.getValue());
+                thumbnailPreview.postInvalidate();
 
-                int width1 = scanInfoView.getWidth();
-                int height1 = scanInfoView.getHeight();
+                final DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
 
-                int space = com.egeio.opencv.tools.Utils.dp2px(getContext(), 10);
-                Size size = new Size();
-                com.egeio.opencv.tools.Utils.calApproximateSize(
-                        new Size(width1 - space * 2, height1 - space * 2),
-                        new Size(width, height),
-                        size);
+                int thumbnailSize = getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
+                int thumbnailMargin = getResources().getDimensionPixelOffset(R.dimen.thumbnail_margin);
+                int width1 = displayMetrics.widthPixels - thumbnailMargin * 2;//scanInfoView.getWidth();
+                int height1 = displayMetrics.heightPixels - thumbnailMargin * 2;// scanInfoView.getHeight();
 
-                FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) thumbnailPreview.getLayoutParams();
-                layoutParams.width = (int) size.width;
-                layoutParams.height = (int) size.height;
-                thumbnailPreview.requestLayout();
-                thumbnailPreview.setY(0);
-                thumbnailPreview.setX(0);
-                TranslateAnimation translateAnimation =
-                        new TranslateAnimation(
-                                (float) ((width1 - size.width) / 2),
-                                width1 - com.egeio.opencv.tools.Utils.dp2px(getContext(), 44 + 10),
-                                (float) ((height1 - size.height) / 2),
-                                height1 + com.egeio.opencv.tools.Utils.dp2px(getContext(), 64 - 44 - 10));
+                float startX = 0;
+                float startY = 0;
 
-                translateAnimation.setDuration(300);
-                translateAnimation.setStartOffset(0);
-                translateAnimation.setInterpolator(new AccelerateInterpolator(1.0f));
-                int tarSize = com.egeio.opencv.tools.Utils.dp2px(getContext(), 44);
-                ScaleAnimation scaleAnimation =
-                        new ScaleAnimation(1, (float) (tarSize / size.width), 1, (float) (tarSize / size.height));
-                scaleAnimation.setDuration(300);
-                scaleAnimation.setStartOffset(0);
-                scaleAnimation.setInterpolator(new AccelerateInterpolator(1.0f));
-                AnimationSet animationSet = new AnimationSet(true);
-                animationSet.addAnimation(scaleAnimation);
-                animationSet.addAnimation(translateAnimation);
-                animationSet.setAnimationListener(new Animation.AnimationListener() {
+                thumbnailPreview.setX(startX);
+                thumbnailPreview.setY(startY);
+                thumbnailPreview.setAlpha(0.6f);
+                thumbnailPreview.setScaleX(1);
+                thumbnailPreview.setScaleY(1);
+
+                AnimatorSet animatorSet = new AnimatorSet();
+                final ObjectAnimator alpha = ObjectAnimator.ofFloat(thumbnailPreview, "alpha", 0.6f, 1.0f, 1.0f).setDuration(500);
+                final ObjectAnimator translationX = ObjectAnimator.ofFloat(thumbnailPreview, "translationX",
+                        startX, width1 - startX - thumbnailSize * 1.5f).setDuration(300);
+                final ObjectAnimator translationY = ObjectAnimator.ofFloat(thumbnailPreview, "translationY",
+                        startY, height1 - startY - thumbnailSize * 1.5f).setDuration(300);
+                final ObjectAnimator scaleX = ObjectAnimator.ofFloat(thumbnailPreview, "scaleX", 1, (float) (thumbnailSize / width1)).setDuration(250);
+                final ObjectAnimator scaleY = ObjectAnimator.ofFloat(thumbnailPreview, "scaleY", 1, (float) (thumbnailSize / height1)).setDuration(250);
+                animatorSet.play(alpha).before(translationX);
+                animatorSet.play(translationX).with(translationY).with(scaleX).with(scaleY);
+                animatorSet.addListener(new Animator.AnimatorListener() {
                     @Override
-                    public void onAnimationStart(Animation animation) {
+                    public void onAnimationStart(Animator animation) {
                         debug.d("动画开始");
                         debug.start("开始动画");
                         thumbnailPreview.setVisibility(View.VISIBLE);
                     }
 
                     @Override
-                    public void onAnimationEnd(Animation animation) {
+                    public void onAnimationEnd(Animator animation) {
                         thumbnailPreview.setVisibility(View.GONE);
-                        thumbnailPreview.setImageBitmap(null);
+                        thumbnailPreview.setBitmap(null);
                         com.egeio.opencv.tools.Utils.recycle(bitmap);
                         debug.end("开始动画");
                         handler.postDelayed(new Runnable() {
@@ -284,11 +319,16 @@ public class ScanFragment extends Fragment {
                     }
 
                     @Override
-                    public void onAnimationRepeat(Animation animation) {
+                    public void onAnimationCancel(Animator animation) {
+
+                    }
+
+                    @Override
+                    public void onAnimationRepeat(Animator animation) {
 
                     }
                 });
-                thumbnailPreview.startAnimation(animationSet);
+                animatorSet.start();
                 debug.end("动画设置");
             }
         });
@@ -304,9 +344,11 @@ public class ScanFragment extends Fragment {
             }
 
             @Override
-            public void onPointsFind(List<PointD> points) {
-                if (points != null && !points.isEmpty()) {
-                    scanInfoView.setPoint(points, squareFindScale / cameraView.getScaleRatio());
+            public void onPointsFind(Size squareContainerSize, List<PointD> points) {
+                if (squareContainerSize != null && points != null && !points.isEmpty()) {
+                    scanInfoView.setPoint(
+                            CvUtils.rotatePoints(points, squareContainerSize.width, squareContainerSize.height, com.egeio.opencv.tools.Utils.getCameraOrientation(getContext())),
+                            squareFindScale / cameraView.getScaleRatio());
                     pointInfoArrayList.add(new PointInfo(points));
                 } else {
                     scanInfoView.clear();

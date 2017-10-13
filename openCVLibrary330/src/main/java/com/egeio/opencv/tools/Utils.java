@@ -1,11 +1,15 @@
 package com.egeio.opencv.tools;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.os.Build;
 import android.util.TypedValue;
 import android.view.Surface;
+import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 
 import com.egeio.opencv.model.PointD;
@@ -54,7 +58,38 @@ public class Utils {
         }
     }
 
-    public static int dp2px(Context context, int dp) {
+    // This snippet hides the system bars.
+    public static void hideSystemUI(Activity activity) {
+        // Set the IMMERSIVE flag.
+        // Set the content to appear under the system bars so that the content
+        // doesn't resize when the system bars hide and show.
+        View decorView = activity.getWindow().getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            );
+        }
+    }
+
+    // This snippet shows the system bars. It does this by removing all the flags
+    // except for the ones that make the content appear under the system bars.
+    public static void showSystemUI(Activity activity) {
+        Window window = activity.getWindow();
+        View decorView = window.getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            decorView.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        }
+    }
+
+    public static int dp2px(Context context, float dp) {
         Resources resources = context.getResources();
         return (int) Math.ceil(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, resources.getDisplayMetrics()));
     }
@@ -88,24 +123,6 @@ public class Utils {
             result = (info.orientation - degrees + 360) % 360;
         }
         return result;
-    }
-
-    public static Mat rotateMatByCamera(Context context, Mat mat) {
-        Mat matResult;
-        int cameraOrientation = Utils.getCameraOrientation(context);
-        if (cameraOrientation == 90) {
-            matResult = new Mat();
-            Core.rotate(mat, matResult, Core.ROTATE_90_CLOCKWISE);
-        } else if (cameraOrientation == 180) {
-            matResult = new Mat();
-            Core.rotate(mat, matResult, Core.ROTATE_180);
-        } else if (cameraOrientation == 270) {
-            matResult = new Mat();
-            Core.rotate(mat, matResult, Core.ROTATE_90_COUNTERCLOCKWISE);
-        } else {
-            matResult = mat.clone();
-        }
-        return matResult;
     }
 
     public static MatOfPoint2f copy2MatPoint2f(MatOfPoint mat) {

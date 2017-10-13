@@ -10,6 +10,7 @@ import com.egeio.opencv.tools.Utils;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.core.Size;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ public abstract class SquareFindWorker extends Worker {
 
     public abstract Mat getFrameMat();
 
-    public abstract void onPointsFind(List<PointD> points);
+    public abstract void onPointsFind(Size squareContainerSize, List<PointD> points);
 
     private float defaultScale;
 
@@ -42,9 +43,11 @@ public abstract class SquareFindWorker extends Worker {
             // 检测区域
             List<List<Point>> matList = new ArrayList<>();
             Mat frameMat = null;
+            Size size = null;
             try {
                 debug.start("获取当前帧");
                 frameMat = getFrameMat();
+                size = frameMat.size();
                 debug.start("获取当前帧");
                 if (isWorkerStopped()) {
                     break;
@@ -66,9 +69,9 @@ public abstract class SquareFindWorker extends Worker {
             }
             if (matList.size() > 0) {
                 List<Point> largestList = Utils.findLargestList(matList);
-                onPointsFind(CvUtils.point2pointD(largestList));
+                onPointsFind(size, CvUtils.point2pointD(largestList));
             } else {
-                onPointsFind(null);
+                onPointsFind(null, null);
             }
             Log.d(TAG, "获取到了几个点" + matList.size());
         }
