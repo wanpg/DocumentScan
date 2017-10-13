@@ -12,22 +12,22 @@ import android.view.View;
  * Created by wangjinpeng on 2017/10/13.
  */
 
-public class CaptureView extends View {
+public class DotModifyView extends View {
 
-    public CaptureView(Context context) {
+    public DotModifyView(Context context) {
         super(context);
     }
 
-    public CaptureView(Context context, @Nullable AttributeSet attrs) {
+    public DotModifyView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
     }
 
-    public CaptureView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public DotModifyView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public CaptureView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public DotModifyView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 

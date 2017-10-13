@@ -54,7 +54,9 @@ public abstract class SquareFindWorker extends Worker {
                 }
                 if (frameMat != null && !frameMat.empty()) {
                     debug.start("寻找多边形");
-                    squaresTracker.findSquares(frameMat, matList, defaultScale);
+                    matList.clear();
+//                    squaresTracker.findSquares(frameMat, matList, defaultScale);
+                    matList.addAll(squaresTracker.findLargestSquares(frameMat, defaultScale));
                     debug.end("寻找多边形");
                 }
             } catch (Exception e) {
