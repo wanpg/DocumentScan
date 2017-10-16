@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.egeio.opencv.ScanEditInterface;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.view.FragmentPagerAdapter;
 
@@ -27,10 +28,13 @@ public class EditFragment extends Fragment {
 
     private ArrayList<ScanInfo> scanInfoArrayList;
 
+    private ScanEditInterface scanEditInterface;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         scanInfoArrayList = getArguments().getParcelableArrayList("SCAN_INFO_ARRAY");
+        scanEditInterface = (ScanEditInterface) getActivity();
     }
 
     @Nullable
@@ -54,7 +58,9 @@ public class EditFragment extends Fragment {
         areaCrop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                int currentItem = viewPager.getCurrentItem();
+                ScanInfo scanInfo = scanInfoArrayList.get(currentItem);
+                scanEditInterface.toDotModify(scanInfo);
             }
         });
         areaOptimize.setOnClickListener(new View.OnClickListener() {
@@ -70,7 +76,6 @@ public class EditFragment extends Fragment {
                         ((ImagePreviewFragment) fragmentByTag).updateScanInfo(scanInfo);
                     }
                 }
-
             }
         });
         areaRotate.setOnClickListener(new View.OnClickListener() {

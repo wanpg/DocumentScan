@@ -38,7 +38,7 @@ public class ImagePreviewFragment extends Fragment {
         return fragment;
     }
 
-
+    private View mContainer;
     private ScanInfo scanInfo;
     private PreviewImageView imageView;
     private boolean isFirst = true;
@@ -54,9 +54,11 @@ public class ImagePreviewFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View inflate = inflater.inflate(R.layout.fragment_image_preview, null);
-        imageView = inflate.findViewById(R.id.image);
-        return inflate;
+        if (mContainer == null) {
+            mContainer = inflater.inflate(R.layout.fragment_image_preview, null);
+            imageView = mContainer.findViewById(R.id.image);
+        }
+        return mContainer;
     }
 
     @Override
@@ -100,22 +102,23 @@ public class ImagePreviewFragment extends Fragment {
         new Thread(imageLoadWorker = new Worker() {
             @Override
             public void doWork() {
-                debug.start("等待imageView绘制");
-                if (imageView.getHeight() <= 0 || imageView.getWidth() <= 0) {
-                    while (true) {
-                        if (imageView.getWidth() > 0 && imageView.getHeight() > 0) {
-                            break;
-                        }
-                        try {
-                            Thread.sleep(20);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                try {
+                    debug.start("等待imageView绘制");
+                    if (imageView.getHeight() <= 0 || imageView.getWidth() <= 0) {
+                        while (true) {
+                            if (imageView.getWidth() > 0 && imageView.getHeight() > 0) {
+                                break;
+                            }
+                            assertWorkStopped();
+                            try {
+                                Thread.sleep(20);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
-                }
-                debug.end("等待imageView绘制");
+                    debug.end("等待imageView绘制");
 
-                try {
                     debug.start("计算目标尺寸");
                     final ScanInfo.Angle rotateAngle = scanInfo.getRotateAngle();
                     // 此处对

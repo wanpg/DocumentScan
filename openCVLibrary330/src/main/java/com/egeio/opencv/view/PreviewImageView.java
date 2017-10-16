@@ -17,7 +17,7 @@ import android.view.View;
 public class PreviewImageView extends View {
 
 
-    Matrix matrix = new Matrix();
+    private Matrix matrix = new Matrix();
 
     public PreviewImageView(Context context) {
         super(context);
@@ -43,8 +43,22 @@ public class PreviewImageView extends View {
         this.bitmap = bitmap;
     }
 
+    public Bitmap getBitmap() {
+        return bitmap;
+    }
+
     public synchronized void setRotateAngle(int rotateAngle) {
         this.rotateAngle = rotateAngle;
+    }
+
+    public int getRotateAngle() {
+        return rotateAngle;
+    }
+
+    private float drawScaleRatio = 1f;
+
+    public float getDrawScaleRatio() {
+        return drawScaleRatio;
     }
 
     @Override
@@ -63,12 +77,12 @@ public class PreviewImageView extends View {
             float widthScaleRatio = width * 1f / rotatedBitmapWidth;
             float heightScaleRatio = height * 1f / rotatedBitmapHeight;
 
-            float scaleRatio = Math.min(widthScaleRatio, heightScaleRatio);
+            drawScaleRatio = Math.min(widthScaleRatio, heightScaleRatio);
 
             matrix.reset();
             matrix.preTranslate(-bitmap.getWidth() / 2f, -bitmap.getHeight() / 2f);
             matrix.postRotate(rotateAngle);
-            matrix.postScale(scaleRatio, scaleRatio);
+            matrix.postScale(drawScaleRatio, drawScaleRatio);
             matrix.postTranslate(width / 2f + getPaddingLeft(), height / 2f + getPaddingTop());
             canvas.drawBitmap(bitmap, matrix, null);
         }

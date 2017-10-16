@@ -271,6 +271,10 @@ public class Utils {
         return (float) Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
     }
 
+    public static double distance(PointD p1, PointD p2) {
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    }
+
     /**
      * 计算四个点的中心点
      *

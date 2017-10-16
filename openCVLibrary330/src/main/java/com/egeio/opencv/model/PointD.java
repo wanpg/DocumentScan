@@ -7,10 +7,14 @@ import android.os.Parcelable;
  * double 类型的point
  */
 
-public class PointD implements Parcelable {
+public class PointD implements Parcelable, Cloneable {
 
     public double x;
     public double y;
+
+    public PointD() {
+        this(0, 0);
+    }
 
     public PointD(double x, double y) {
         this.x = x;
@@ -44,4 +48,17 @@ public class PointD implements Parcelable {
             return new PointD[size];
         }
     };
+
+    @Override
+    public PointD clone() {
+        PointD clone = null;
+        try {
+            clone = (PointD) super.clone();
+        } catch (Exception ignored) {
+        }
+        if (clone == null) {
+            return new PointD(x, y);
+        }
+        return clone;
+    }
 }
