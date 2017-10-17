@@ -58,7 +58,7 @@ public class ScanInfo implements Parcelable {
     /**
      * 处理后的四个点
      */
-    private final PointInfo currentPointInfo;
+    private PointInfo currentPointInfo;
 
     /**
      * 初始角度
@@ -130,6 +130,10 @@ public class ScanInfo implements Parcelable {
         return currentPointInfo;
     }
 
+    public void setCurrentPointInfo(PointInfo currentPointInfo) {
+        this.currentPointInfo = currentPointInfo;
+    }
+
     public String getPath() {
         return path;
     }
@@ -166,5 +170,10 @@ public class ScanInfo implements Parcelable {
      */
     public Size getOriginSize() {
         return new Size(originWidth, originHeight);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof ScanInfo && ((ScanInfo) obj).getPath().equals(path);
     }
 }

@@ -21,7 +21,6 @@ import com.egeio.opencv.tools.Utils;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.opencv.core.Point;
 import org.opencv.core.Size;
 
 import java.util.ArrayList;
@@ -88,6 +87,15 @@ public class DotModifyView extends PreviewImageView {
     private final List<PointD> rotatedPoints = new ArrayList<>();
     private float scale = 1f;
 
+    public List<PointD> getModifiedPoints() {
+        final Size originSize = scanInfo.getOriginSize();
+        final int rotateAngle = getRotateAngle();
+
+        double rotatedOriginWidth = rotateAngle == 90 || rotateAngle == 270 ? originSize.height : originSize.width;
+        double rotatedOriginHeight = rotateAngle == 90 || rotateAngle == 270 ? originSize.width : originSize.height;
+        return CvUtils.rotatePoints(rotatedPoints, rotatedOriginWidth, rotatedOriginHeight, (360 - rotateAngle) % 360);
+    }
+
     /**
      * 图片绘制的起始偏移点
      */
@@ -141,12 +149,12 @@ public class DotModifyView extends PreviewImageView {
             pointPath.close();
 
             // FIXME: 2017/10/16 此处为了减少4.4以下机器的内存开销，决定不绘制蒙版
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && false) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 // 绘制蒙版
-                maskRectF.left = getPaddingLeft() + offsetPoint.x;
-                maskRectF.top = getPaddingTop() + offsetPoint.y;
-                maskRectF.right = (float) (maskRectF.left + rotatedOriginWidth * scale);
-                maskRectF.bottom = (float) (maskRectF.top + rotatedOriginHeight * scale);
+                maskRectF.left = getPaddingLeft();
+                maskRectF.top = getPaddingTop();
+                maskRectF.right = maskRectF.left + width;
+                maskRectF.bottom = maskRectF.top + height;
                 maskPath.addRect(maskRectF, Path.Direction.CCW);
                 maskPath.op(pointPath, Path.Op.XOR);
                 canvas.drawRect(maskRectF, maskPaint);
@@ -165,9 +173,8 @@ public class DotModifyView extends PreviewImageView {
         }
     }
 
-    private PointD touchDownPoint = new PointD();
+    private PointD lastTouchPoint;
     private PointD curModifyPointD;
-    private PointD curModifyPointDClone;
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -175,7 +182,11 @@ public class DotModifyView extends PreviewImageView {
         if (action == MotionEvent.ACTION_DOWN) {
             recordTouchDown(event);
         } else if (action == MotionEvent.ACTION_MOVE) {
-            operateTouchMove(event);
+            if (lastTouchPoint == null) {
+                recordTouchDown(event);
+            } else {
+                operateTouchMove(event);
+            }
         } else if (action == MotionEvent.ACTION_CANCEL
                 || action == MotionEvent.ACTION_UP) {
             releaseTouch();
@@ -185,30 +196,37 @@ public class DotModifyView extends PreviewImageView {
 
     private void recordTouchDown(MotionEvent event) {
         // 记录起始点
-        touchDownPoint.x = event.getX();
-        touchDownPoint.y = event.getY();
+        lastTouchPoint = new PointD(event.getX(), event.getY());
         // 找出最近的点
-        curModifyPointD = getClosestPointD(new PointD((touchDownPoint.x - offsetPoint.x) / scale, (touchDownPoint.y - offsetPoint.y) / scale));
-        // 复制最近的点，作为后面位置计算的基准
-        curModifyPointDClone = curModifyPointD.clone();
+        curModifyPointD = getClosestPointD(new PointD((lastTouchPoint.x - offsetPoint.x) / scale, (lastTouchPoint.y - offsetPoint.y) / scale));
     }
 
     private void operateTouchMove(MotionEvent event) {
         // 改变指定的point
         final PointD tempPoint = curModifyPointD.clone();
-        curModifyPointD.x = curModifyPointDClone.x + (event.getX() - touchDownPoint.x) / scale;
-        curModifyPointD.y = curModifyPointDClone.y + (event.getY() - touchDownPoint.y) / scale;
-        if (!checkListIsValid()) {
+        curModifyPointD.x = curModifyPointD.x + (event.getX() - lastTouchPoint.x) / scale;
+        curModifyPointD.y = curModifyPointD.y + (event.getY() - lastTouchPoint.y) / scale;
+
+        lastTouchPoint.x = event.getX();
+        lastTouchPoint.y = event.getY();
+
+        final Size originSize = scanInfo.getOriginSize();
+        final int rotateAngle = getRotateAngle();
+        double rotatedOriginWidth = rotateAngle == 90 || rotateAngle == 270 ? originSize.height : originSize.width;
+        double rotatedOriginHeight = rotateAngle == 90 || rotateAngle == 270 ? originSize.width : originSize.height;
+
+        if (!checkListIsValid(rotatedPoints, curModifyPointD, new Size(rotatedOriginWidth, rotatedOriginHeight))) {
             curModifyPointD.x = tempPoint.x;
             curModifyPointD.y = tempPoint.y;
+        } else {
+            invalidate();
         }
-        invalidate();
     }
 
     private void releaseTouch() {
         // 松开
-        curModifyPointDClone = null;
         curModifyPointD = null;
+        lastTouchPoint = null;
     }
 
     /**
@@ -231,26 +249,22 @@ public class DotModifyView extends PreviewImageView {
         return pointDClosed;
     }
 
-    private boolean checkListIsValid() {
-        final Size originSize = scanInfo.getOriginSize();
-        final int rotateAngle = getRotateAngle();
-        double rotatedOriginWidth = rotateAngle == 90 || rotateAngle == 270 ? originSize.height : originSize.width;
-        double rotatedOriginHeight = rotateAngle == 90 || rotateAngle == 270 ? originSize.width : originSize.height;
+    private static boolean checkListIsValid(List<PointD> pointDList, PointD curModifyPointD, Size size) {
 
-        if (curModifyPointD.x < 0 || curModifyPointD.x > rotatedOriginWidth
-                || curModifyPointD.y < 0 || curModifyPointD.y > rotatedOriginHeight) {
+        if (curModifyPointD.x < 0 || curModifyPointD.x > size.width
+                || curModifyPointD.y < 0 || curModifyPointD.y > size.height) {
             return false;
         }
 
-        boolean intersectant = isSegmentIntersectant(rotatedPoints.get(0), rotatedPoints.get(1), rotatedPoints.get(3), rotatedPoints.get(0))
-                && isSegmentIntersectant(rotatedPoints.get(0), rotatedPoints.get(3), rotatedPoints.get(1), rotatedPoints.get(2));
+        boolean intersectant = isSegmentIntersectant(pointDList.get(0), pointDList.get(1), pointDList.get(2), pointDList.get(3))
+                || isSegmentIntersectant(pointDList.get(0), pointDList.get(3), pointDList.get(1), pointDList.get(2));
         return !intersectant;
     }
 
     /**
      * @return
      */
-    private boolean isSegmentIntersectant(PointD s1, PointD e1, PointD s2, PointD e2) {
+    private static boolean isSegmentIntersectant(PointD s1, PointD e1, PointD s2, PointD e2) {
         double tolerance = 1.0E-10D;
         Line line1 = new Line(new Vector2D(s1.x, s1.y), new Vector2D(e1.x, e1.y), tolerance);
         Line line2 = new Line(new Vector2D(s2.x, s2.y), new Vector2D(e2.x, e2.y), tolerance);
@@ -262,7 +276,7 @@ public class DotModifyView extends PreviewImageView {
         return false;
     }
 
-    private boolean isPointInSegmentArea(PointD s, PointD e, PointD p) {
+    private static boolean isPointInSegmentArea(PointD s, PointD e, PointD p) {
         double minX = Math.min(s.x, e.x);
         double maxX = Math.max(s.x, e.x);
         double minY = Math.min(s.y, e.y);

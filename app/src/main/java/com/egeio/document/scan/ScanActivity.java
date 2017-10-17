@@ -42,7 +42,7 @@ public class ScanActivity extends AppCompatActivity implements ScanManagerInterf
     @Override
     public void gotoEdit() {
         Intent intent = new Intent(this, EditActivity.class);
-        intent.putExtra("SCAN_INFO_ARRAY", scanDataManager.getScanInfoArrayList());
+        intent.putExtra("SCAN_DATA", scanDataManager);
         startActivity(intent);
     }
 

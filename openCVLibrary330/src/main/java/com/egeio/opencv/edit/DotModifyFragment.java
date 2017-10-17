@@ -9,6 +9,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.egeio.opencv.ScanEditInterface;
+import com.egeio.opencv.model.PointD;
+import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.view.DotModifyView;
@@ -17,16 +20,18 @@ import com.egeio.opencv.work.Worker;
 import org.opencv.R;
 import org.opencv.core.Size;
 
+import java.util.List;
+
 /**
  * Created by wangjinpeng on 2017/10/16.
  */
 
 public class DotModifyFragment extends Fragment {
 
-    public static Fragment createinstance(ScanInfo scanInfo) {
+    public static Fragment createInstance(int currentIndex) {
         DotModifyFragment fragment = new DotModifyFragment();
         Bundle bundle = new Bundle();
-        bundle.putParcelable("SCAN_INFO", scanInfo);
+        bundle.putInt("INDEX", currentIndex);
         fragment.setArguments(bundle);
         return fragment;
     }
@@ -34,11 +39,14 @@ public class DotModifyFragment extends Fragment {
     private View mContainer;
     private DotModifyView dotModifyView;
     private ScanInfo scanInfo;
+    private ScanEditInterface scanEditInterface;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        scanInfo = getArguments().getParcelable("SCAN_INFO");
+        final int index = getArguments().getInt("INDEX");
+        scanEditInterface = (ScanEditInterface) getActivity();
+        scanInfo = scanEditInterface.getScanInfo(index);
     }
 
     @Nullable
@@ -47,6 +55,20 @@ public class DotModifyFragment extends Fragment {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_dot_modify, null);
             dotModifyView = mContainer.findViewById(R.id.dot_modify);
+            mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    scanEditInterface.toEditPreview(scanInfo);
+                }
+            });
+            mContainer.findViewById(R.id.complete).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    final List<PointD> modifiedPoints = dotModifyView.getModifiedPoints();
+                    scanInfo.setCurrentPointInfo(new PointInfo(modifiedPoints));
+                    scanEditInterface.toEditPreview(scanInfo);
+                }
+            });
         }
         return mContainer;
     }
@@ -92,10 +114,5 @@ public class DotModifyFragment extends Fragment {
             }).start();
         }
         isFirst = false;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
     }
 }

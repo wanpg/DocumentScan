@@ -51,6 +51,10 @@ public class ImagePreviewFragment extends Fragment {
         scanInfo = getArguments().getParcelable("SCAN_INFO");
     }
 
+    public ScanInfo getScanInfo() {
+        return scanInfo;
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

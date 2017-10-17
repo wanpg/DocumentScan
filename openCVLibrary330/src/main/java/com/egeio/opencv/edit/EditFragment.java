@@ -14,26 +14,32 @@ import com.egeio.opencv.view.FragmentPagerAdapter;
 
 import org.opencv.R;
 
-import java.util.ArrayList;
-
 /**
  * Created by wangjinpeng on 2017/9/30.
  */
 
 public class EditFragment extends Fragment {
 
+    public static Fragment createInstance(int index) {
+        EditFragment fragment = new EditFragment();
+        Bundle bundle = new Bundle();
+        bundle.putInt("INDEX", index);
+        fragment.setArguments(bundle);
+        return fragment;
+    }
+
     private View mContainer;
     private ViewPager viewPager;
     private View areaCrop, areaOptimize, areaRotate, areaDelete;
-
-    private ArrayList<ScanInfo> scanInfoArrayList;
+    private int currentIndex;
 
     private ScanEditInterface scanEditInterface;
+    private FragmentPagerAdapter pagerAdapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        scanInfoArrayList = getArguments().getParcelableArrayList("SCAN_INFO_ARRAY");
+        currentIndex = getArguments().getInt("INDEX");
         scanEditInterface = (ScanEditInterface) getActivity();
     }
 
@@ -47,8 +53,6 @@ public class EditFragment extends Fragment {
         return mContainer;
     }
 
-    FragmentPagerAdapter pagerAdapter;
-
     private void initView() {
         viewPager = mContainer.findViewById(R.id.view_pager);
         areaCrop = mContainer.findViewById(R.id.area_crop);
@@ -59,7 +63,7 @@ public class EditFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                ScanInfo scanInfo = scanInfoArrayList.get(currentItem);
+                final ScanInfo scanInfo = scanEditInterface.getScanInfo(currentItem);
                 scanEditInterface.toDotModify(scanInfo);
             }
         });
@@ -67,7 +71,7 @@ public class EditFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                ScanInfo scanInfo = scanInfoArrayList.get(currentItem);
+                final ScanInfo scanInfo = scanEditInterface.getScanInfo(currentItem);
                 if (scanInfo != null) {
                     scanInfo.setOptimized(!scanInfo.isOptimized());
                     String tag = FragmentPagerAdapter.makeFragmentName(viewPager.getId(), pagerAdapter.getItemId(currentItem));
@@ -82,7 +86,7 @@ public class EditFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                ScanInfo scanInfo = scanInfoArrayList.get(currentItem);
+                final ScanInfo scanInfo = scanEditInterface.getScanInfo(currentItem);
                 if (scanInfo != null) {
                     int value = scanInfo.getRotateAngle().getValue();
                     value += 270;// 逆时针旋转
@@ -101,29 +105,36 @@ public class EditFragment extends Fragment {
         areaDelete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                int currentItem = viewPager.getCurrentItem();
+                scanEditInterface.remove(currentItem);
+                pagerAdapter.notifyDataSetChanged();
             }
         });
         pagerAdapter = new FragmentPagerAdapter(getChildFragmentManager()) {
 
             @Override
             public int getCount() {
-                return scanInfoArrayList.size();
+                return scanEditInterface.getScanSize();
             }
 
             @Override
             public Fragment getItem(int position) {
-                return ImagePreviewFragment.createInstance(scanInfoArrayList.get(position));
+                return ImagePreviewFragment.createInstance(scanEditInterface.getScanInfo(position));
             }
 
             @Override
             public long getItemId(int position) {
-                return super.getItemId(position);
+                return scanEditInterface.getScanInfo(position).getPath().hashCode();
             }
 
             @Override
-            public float getPageWidth(int position) {
-                return super.getPageWidth(position);
+            public int getItemPosition(Object object) {
+                if (object instanceof ImagePreviewFragment) {
+                    final ScanInfo scanInfo = ((ImagePreviewFragment) object).getScanInfo();
+                    final int index = scanEditInterface.indexOfScanInfo(scanInfo);
+                    return index != -1 ? index : POSITION_NONE;
+                }
+                return super.getItemPosition(object);
             }
         };
         viewPager.setAdapter(pagerAdapter);
@@ -143,5 +154,6 @@ public class EditFragment extends Fragment {
 
             }
         });
+        viewPager.setCurrentItem(currentIndex);
     }
 }
