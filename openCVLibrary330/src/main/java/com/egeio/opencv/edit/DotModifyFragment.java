@@ -2,6 +2,7 @@ package com.egeio.opencv.edit;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -15,6 +16,8 @@ import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.view.DotModifyView;
+import com.egeio.opencv.view.DotZoomView;
+import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.work.Worker;
 
 import org.opencv.R;
@@ -38,6 +41,8 @@ public class DotModifyFragment extends Fragment {
 
     private View mContainer;
     private DotModifyView dotModifyView;
+    private PreviewImageView imagePreviewView;
+    private DotZoomView dotZoomView;
     private ScanInfo scanInfo;
     private ScanEditInterface scanEditInterface;
 
@@ -55,6 +60,8 @@ public class DotModifyFragment extends Fragment {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_dot_modify, null);
             dotModifyView = mContainer.findViewById(R.id.dot_modify);
+            imagePreviewView = mContainer.findViewById(R.id.image_preview);
+            dotZoomView = mContainer.findViewById(R.id.dot_zoom);
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -67,6 +74,12 @@ public class DotModifyFragment extends Fragment {
                     final List<PointD> modifiedPoints = dotModifyView.getModifiedPoints();
                     scanInfo.setCurrentPointInfo(new PointInfo(modifiedPoints));
                     scanEditInterface.toEditPreview(scanInfo);
+                }
+            });
+            dotModifyView.setOnDotChangeListener(new DotModifyView.OnDotChangeListener() {
+                @Override
+                public void onDotChange(PointD dotPointD, List<PointD> pointDList) {
+                    dotZoomView.drawDot(dotPointD, pointDList);
                 }
             });
         }
@@ -103,7 +116,15 @@ public class DotModifyFragment extends Fragment {
                         final Size originSize = scanInfo.getOriginSize();
                         options.inSampleSize = Math.max(2, CvUtils.calculateInSampleSize((int) originSize.width, (int) originSize.height, imageViewMaxSide, imageViewMaxSide));
                         cachedBitmap = BitmapFactory.decodeFile(scanInfo.getPath(), options);
-                        dotModifyView.setScanInfo(scanInfo, cachedBitmap);
+                        // imageView绘制
+                        imagePreviewView.setBitmap(cachedBitmap);
+                        imagePreviewView.setRotateAngle(scanInfo.getRotateAngle().getValue());
+                        imagePreviewView.postInvalidate();
+                        // 绘制点
+                        dotModifyView.setScanInfo(scanInfo);
+                        // 缩放区域
+                        dotZoomView.setBitmap(cachedBitmap);
+                        dotZoomView.setScanInfo(scanInfo);
                     } catch (Exception e) {
                         if (e instanceof Worker.WorkStoppedException) {
                             // 此处回收无用的临时资源

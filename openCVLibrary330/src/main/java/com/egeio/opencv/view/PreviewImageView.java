@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.os.Build;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
@@ -63,28 +64,30 @@ public class PreviewImageView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-        synchronized (PreviewImageView.this) {
-            if (bitmap == null) {
-                return;
-            }
-            final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-            final int height = getHeight() - getPaddingTop() - getPaddingBottom();
+        drawImage(canvas, null);
+    }
 
-            int rotatedBitmapWidth = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getHeight() : bitmap.getWidth();
-            int rotatedBitmapHeight = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getWidth() : bitmap.getHeight();
-
-            float widthScaleRatio = width * 1f / rotatedBitmapWidth;
-            float heightScaleRatio = height * 1f / rotatedBitmapHeight;
-
-            drawScaleRatio = Math.min(widthScaleRatio, heightScaleRatio);
-
-            matrix.reset();
-            matrix.preTranslate(-bitmap.getWidth() / 2f, -bitmap.getHeight() / 2f);
-            matrix.postRotate(rotateAngle);
-            matrix.postScale(drawScaleRatio, drawScaleRatio);
-            matrix.postTranslate(width / 2f + getPaddingLeft(), height / 2f + getPaddingTop());
-            canvas.drawBitmap(bitmap, matrix, null);
+    protected void drawImage(Canvas canvas, Paint paint) {
+        if (bitmap == null) {
+            return;
         }
+        final int width = getWidth() - getPaddingLeft() - getPaddingRight();
+        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
+
+        int rotatedBitmapWidth = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getHeight() : bitmap.getWidth();
+        int rotatedBitmapHeight = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getWidth() : bitmap.getHeight();
+
+        float widthScaleRatio = width * 1f / rotatedBitmapWidth;
+        float heightScaleRatio = height * 1f / rotatedBitmapHeight;
+
+        drawScaleRatio = Math.min(widthScaleRatio, heightScaleRatio);
+
+        matrix.reset();
+        matrix.preTranslate(-bitmap.getWidth() / 2f, -bitmap.getHeight() / 2f);
+        matrix.postRotate(rotateAngle);
+        matrix.postScale(drawScaleRatio, drawScaleRatio);
+        matrix.postTranslate(width / 2f + getPaddingLeft(), height / 2f + getPaddingTop());
+
+        canvas.drawBitmap(bitmap, matrix, paint);
     }
 }

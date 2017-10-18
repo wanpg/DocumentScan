@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.egeio.opencv.ScanInfoView
+    <com.egeio.opencv.view.ScanInfoView
         android:id="@+id/scan_info"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

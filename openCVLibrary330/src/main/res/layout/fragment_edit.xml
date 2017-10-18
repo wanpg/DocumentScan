@@ -8,7 +8,7 @@
     <RelativeLayout
         android:id="@+id/area_title"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="44dp"
         android:background="@android:color/white">
 
         <ImageView
@@ -59,11 +59,13 @@
             android:paddingTop="15dp">
 
             <ImageView
+                android:id="@+id/image_optimize"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
                 app:srcCompat="@drawable/ic_filters" />
 
             <TextView
+                android:id="@+id/text_optimize"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"

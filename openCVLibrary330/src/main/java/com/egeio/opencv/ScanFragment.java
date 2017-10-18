@@ -25,6 +25,7 @@ import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.tools.MatBitmapTransformation;
 import com.egeio.opencv.view.PreviewImageView;
+import com.egeio.opencv.view.ScanInfoView;
 import com.egeio.opencv.work.ImageSaveWorker;
 import com.egeio.opencv.work.SquareFindWorker;
 

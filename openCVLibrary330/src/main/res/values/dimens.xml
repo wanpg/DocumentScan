@@ -3,4 +3,6 @@
     <dimen name="thumbnail_size">47dp</dimen>
     <dimen name="thumbnail_margin">25dp</dimen>
     <dimen name="thumbnail_preview_bottom_margin">95dp</dimen>
+    <dimen name="action_bar_height">44dp</dimen>
+    <dimen name="select_line_width_in_modify">1.5dp</dimen>
 </resources>

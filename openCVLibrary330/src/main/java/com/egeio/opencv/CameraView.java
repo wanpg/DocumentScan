@@ -277,7 +277,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
     public synchronized Mat getFrameMat(float scale) {
         Mat mat = null;
         debug.start("转换照相机数据");
-        if (!javaCameraFrame.isEmpty()) {
+        if (javaCameraFrame != null && !javaCameraFrame.isEmpty()) {
             if (scale == 1) {
                 mat = javaCameraFrame.rgba().clone();
             } else {

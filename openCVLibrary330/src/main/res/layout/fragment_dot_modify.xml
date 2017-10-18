@@ -1,40 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
-    <RelativeLayout
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="44dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/cancel"
-            android:layout_width="wrap_content"
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/action_bar_height">
+
+            <TextView
+                android:id="@+id/cancel"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:text="取消"
+                android:textColor="#747b93"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/complete"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentRight="true"
+                android:gravity="center"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:text="完成"
+                android:textColor="#747b93"
+                android:textSize="16sp" />
+        </RelativeLayout>
+
+        <com.egeio.opencv.view.PreviewImageView
+            android:id="@+id/image_preview"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:text="取消"
-            android:textColor="#747b93"
-            android:textSize="16sp" />
+            android:layout_marginTop="@dimen/action_bar_height" />
 
-        <TextView
-            android:id="@+id/complete"
-            android:layout_width="wrap_content"
+        <com.egeio.opencv.view.DotModifyView
+            android:id="@+id/dot_modify"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:gravity="center"
-            android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:text="完成"
-            android:textColor="#747b93"
-            android:textSize="16sp" />
-    </RelativeLayout>
+            android:layout_marginTop="@dimen/action_bar_height" />
+    </FrameLayout>
 
-    <com.egeio.opencv.view.DotModifyView
-        android:id="@+id/dot_modify"
+    <com.egeio.opencv.view.DotZoomView
+        android:id="@+id/dot_zoom"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:paddingTop="@dimen/action_bar_height" />
+</FrameLayout>

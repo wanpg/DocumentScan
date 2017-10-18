@@ -7,6 +7,8 @@ import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.egeio.opencv.ScanEditInterface;
 import com.egeio.opencv.model.ScanInfo;
@@ -31,6 +33,9 @@ public class EditFragment extends Fragment {
     private View mContainer;
     private ViewPager viewPager;
     private View areaCrop, areaOptimize, areaRotate, areaDelete;
+    private ImageView imageOptimize;
+    private TextView textOptimize;
+
     private int currentIndex;
 
     private ScanEditInterface scanEditInterface;
@@ -59,6 +64,8 @@ public class EditFragment extends Fragment {
         areaOptimize = mContainer.findViewById(R.id.area_optimize);
         areaRotate = mContainer.findViewById(R.id.area_rotate);
         areaDelete = mContainer.findViewById(R.id.area_delete);
+        imageOptimize = mContainer.findViewById(R.id.image_optimize);
+        textOptimize = mContainer.findViewById(R.id.text_optimize);
         areaCrop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -80,6 +87,7 @@ public class EditFragment extends Fragment {
                         ((ImagePreviewFragment) fragmentByTag).updateScanInfo(scanInfo);
                     }
                 }
+                changeOptimizeButton(currentItem);
             }
         });
         areaRotate.setOnClickListener(new View.OnClickListener() {
@@ -146,7 +154,7 @@ public class EditFragment extends Fragment {
 
             @Override
             public void onPageSelected(int position) {
-
+                changeOptimizeButton(position);
             }
 
             @Override
@@ -155,5 +163,12 @@ public class EditFragment extends Fragment {
             }
         });
         viewPager.setCurrentItem(currentIndex);
+        changeOptimizeButton(currentIndex);
+    }
+
+    private void changeOptimizeButton(int position) {
+        final ScanInfo scanInfo = scanEditInterface.getScanInfo(position);
+        imageOptimize.setImageResource(scanInfo.isOptimized() ? R.drawable.ic_reduce : R.drawable.ic_filters);
+        textOptimize.setText(scanInfo.isOptimized() ? "还原" : "优化");
     }
 }
