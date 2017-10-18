@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.egeio.opencv.BaseScanFragment;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
@@ -28,7 +29,7 @@ import java.util.ArrayList;
  * Created by wangjinpeng on 2017/10/11.
  */
 
-public class ImagePreviewFragment extends Fragment {
+public class ImagePreviewFragment extends BaseScanFragment {
 
     public static Fragment createInstance(ScanInfo scanInfo) {
         ImagePreviewFragment fragment = new ImagePreviewFragment();
@@ -131,7 +132,12 @@ public class ImagePreviewFragment extends Fragment {
                     // 计算出原图透视转换后图片的尺寸
                     final PointInfo currentPointInfo = scanInfo.getCurrentPointInfo();
                     final ArrayList<PointD> points = currentPointInfo.getPoints();
-                    final Size perspectiveSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(points));
+                    Size perspectiveSize;
+                    if (scanInfo.matchSize()) {
+                        perspectiveSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(points));
+                    } else {
+                        perspectiveSize = new Size(originSize.width, originSize.height);
+                    }
                     debug.end("计算目标尺寸");
 
                     // 根据转换后的size 和 imageView的最小的size
@@ -153,7 +159,7 @@ public class ImagePreviewFragment extends Fragment {
                     debug.d("bitmapSrc--size:[" + bitmapSrc.getWidth() + ", " + bitmapSrc.getHeight() + "]");
 
                     // 角度为0，面积匹配，没有优化的状态返回原图
-                    if (scanInfo.matchSize(originSize.width, originSize.height)
+                    if (scanInfo.matchSize()
                             && !scanInfo.isOptimized()) {
                         //原图
                     } else {

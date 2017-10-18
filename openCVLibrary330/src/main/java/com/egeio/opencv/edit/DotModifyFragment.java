@@ -2,7 +2,6 @@ package com.egeio.opencv.edit;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.egeio.opencv.BaseScanFragment;
 import com.egeio.opencv.ScanEditInterface;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
@@ -29,7 +29,7 @@ import java.util.List;
  * Created by wangjinpeng on 2017/10/16.
  */
 
-public class DotModifyFragment extends Fragment {
+public class DotModifyFragment extends BaseScanFragment {
 
     public static Fragment createInstance(int currentIndex) {
         DotModifyFragment fragment = new DotModifyFragment();
@@ -65,7 +65,7 @@ public class DotModifyFragment extends Fragment {
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    scanEditInterface.toEditPreview(scanInfo);
+                    getActivity().onBackPressed();
                 }
             });
             mContainer.findViewById(R.id.complete).setOnClickListener(new View.OnClickListener() {
@@ -135,5 +135,11 @@ public class DotModifyFragment extends Fragment {
             }).start();
         }
         isFirst = false;
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        scanEditInterface.toEditPreview(scanInfo);
+        return true;
     }
 }

@@ -15,7 +15,6 @@ import android.view.WindowManager;
 import com.egeio.opencv.model.PointD;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -58,6 +57,14 @@ public class Utils {
         }
     }
 
+    public static void setFullScreen(Activity activity) {
+        activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); // 隐藏android系统的状态栏
+    }
+
+    public static void removeFullScreen(Activity activity) {
+        activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+    }
+
     // This snippet hides the system bars.
     public static void hideSystemUI(Activity activity) {
         // Set the IMMERSIVE flag.
@@ -85,7 +92,7 @@ public class Utils {
             decorView.setSystemUiVisibility(
                     View.SYSTEM_UI_FLAG_LAYOUT_STABLE
 //                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+                            /*| View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/);
         }
     }
 
@@ -366,7 +373,7 @@ public class Utils {
         start.convertTo(start, CvType.CV_32FC2);
         result.convertTo(result, CvType.CV_32FC2);
 
-        Mat mat = new Mat(size, CvType.CV_8UC1);
+        Mat mat = new Mat(size, src.type());
         Mat perspective = Imgproc.getPerspectiveTransform(start, result);
         Imgproc.warpPerspective(src, mat, perspective, size);
         return mat;

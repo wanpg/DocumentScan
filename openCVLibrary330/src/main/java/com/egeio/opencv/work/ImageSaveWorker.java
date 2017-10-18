@@ -53,7 +53,6 @@ public abstract class ImageSaveWorker extends Worker {
 
         // 此处根据比例对point做一次位置偏移
         Size tempSize = new Size();
-        Size size = new Size();
         double scale = Utils.calApproximateSize(
                 new Size(pictureSize.width, pictureSize.height),
                 new Size(previewSize.width, previewSize.height),
@@ -63,9 +62,9 @@ public abstract class ImageSaveWorker extends Worker {
         PointInfo pointInfoTemp;
         if (pointInfo == null) {
             points.add(new PointD(0, 0));
-            points.add(new PointD(size.width, 0));
-            points.add(new PointD(size.width, size.height));
-            points.add(new PointD(0, size.height));
+            points.add(new PointD(pictureSize.width, 0));
+            points.add(new PointD(pictureSize.width, pictureSize.height));
+            points.add(new PointD(0, pictureSize.height));
             pointInfoTemp = new PointInfo(points);
         } else {
             for (PointD point : pointInfo.getPoints()) {

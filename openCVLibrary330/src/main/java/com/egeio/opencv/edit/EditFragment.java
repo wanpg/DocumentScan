@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.egeio.opencv.BaseScanFragment;
 import com.egeio.opencv.ScanEditInterface;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.view.FragmentPagerAdapter;
@@ -20,7 +21,7 @@ import org.opencv.R;
  * Created by wangjinpeng on 2017/9/30.
  */
 
-public class EditFragment extends Fragment {
+public class EditFragment extends BaseScanFragment {
 
     public static Fragment createInstance(int index) {
         EditFragment fragment = new EditFragment();
@@ -56,6 +57,13 @@ public class EditFragment extends Fragment {
             initView();
         }
         return mContainer;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        com.egeio.opencv.tools.Utils.removeFullScreen(getActivity());
+        com.egeio.opencv.tools.Utils.showSystemUI(getActivity());
     }
 
     private void initView() {
@@ -122,7 +130,7 @@ public class EditFragment extends Fragment {
 
             @Override
             public int getCount() {
-                return scanEditInterface.getScanSize();
+                return scanEditInterface.getScanInfoSize();
             }
 
             @Override
@@ -170,5 +178,11 @@ public class EditFragment extends Fragment {
         final ScanInfo scanInfo = scanEditInterface.getScanInfo(position);
         imageOptimize.setImageResource(scanInfo.isOptimized() ? R.drawable.ic_reduce : R.drawable.ic_filters);
         textOptimize.setText(scanInfo.isOptimized() ? "还原" : "优化");
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        scanEditInterface.toCamera();
+        return true;
     }
 }

@@ -37,7 +37,7 @@ public class MatBitmapTransformation extends BitmapTransformation {
         Size originSize = scanInfo.getOriginSize();
         // 角度为0，面积匹配，没有优化的状态返回原图
         if (rotateAngle == ScanInfo.Angle.angle_0
-                && scanInfo.matchSize(originSize.width, originSize.height)
+                && scanInfo.matchSize()
                 && !scanInfo.isOptimized()) {
             //原图
             return toTransform;

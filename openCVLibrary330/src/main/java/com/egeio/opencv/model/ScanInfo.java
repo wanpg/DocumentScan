@@ -154,10 +154,10 @@ public class ScanInfo implements Parcelable {
         isOptimized = optimized;
     }
 
-    public boolean matchSize(double width, double height) {
+    public boolean matchSize() {
         Mat mat = CvUtils.pointToMat(currentPointInfo.getPoints());
         double area = Imgproc.contourArea(mat);
-        if (Math.abs(area - width * height) < 0.1d) {
+        if (Math.abs(area - originWidth * originHeight) < 0.1d) {
             return true;
         }
         return false;

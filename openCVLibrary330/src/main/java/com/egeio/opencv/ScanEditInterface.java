@@ -8,6 +8,8 @@ import com.egeio.opencv.model.ScanInfo;
 
 public interface ScanEditInterface {
 
+    void toCamera();
+
     void toDotModify(ScanInfo scanInfo);
 
     void toEditPreview(ScanInfo scanInfo);
@@ -16,7 +18,9 @@ public interface ScanEditInterface {
 
     int indexOfScanInfo(ScanInfo info);
 
-    int getScanSize();
+    int getScanInfoSize();
 
     void remove(int index);
+
+    void add(ScanInfo scanInfo);
 }

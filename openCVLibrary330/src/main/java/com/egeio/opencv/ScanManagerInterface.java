@@ -6,7 +6,5 @@ package com.egeio.opencv;
 
 public interface ScanManagerInterface {
 
-    void gotoEdit();
-
     ScanDataManager getManager();
 }

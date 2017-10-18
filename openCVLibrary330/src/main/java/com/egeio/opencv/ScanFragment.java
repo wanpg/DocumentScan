@@ -9,12 +9,12 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.ImageViewTarget;
@@ -39,12 +39,14 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ScanFragment extends Fragment {
+public class ScanFragment extends BaseScanFragment {
 
     private CameraView cameraView;
     private ScanInfoView scanInfoView;
     private ImageView thumbnail, flash;
     private PreviewImageView thumbnailPreview;
+    private TextView txtNumber;
+    private View viewArrow;
     /**
      * 预览图按照这个比率缩小进行边框查找
      */
@@ -58,12 +60,12 @@ public class ScanFragment extends Fragment {
 
     private Handler handler = new Handler();
 
-    ScanManagerInterface scanManagerInterface;
+    ScanEditInterface scanEditInterface;
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        scanManagerInterface = (ScanManagerInterface) getActivity();
+        scanEditInterface = (ScanEditInterface) getActivity();
     }
 
     @Override
@@ -82,6 +84,8 @@ public class ScanFragment extends Fragment {
             thumbnail = mContainer.findViewById(R.id.thumbnail);
             thumbnailPreview = mContainer.findViewById(R.id.thumbnail_preview);
             flash = mContainer.findViewById(R.id.flash);
+            txtNumber = mContainer.findViewById(R.id.text_num);
+            viewArrow = mContainer.findViewById(R.id.view_arrow);
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -97,7 +101,7 @@ public class ScanFragment extends Fragment {
             thumbnail.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    scanManagerInterface.gotoEdit();
+                    scanEditInterface.toEditPreview(null);
                 }
             });
             flash.setOnClickListener(new View.OnClickListener() {
@@ -107,6 +111,7 @@ public class ScanFragment extends Fragment {
                     changeFlashResource();
                 }
             });
+            setCachedNumber(scanEditInterface.getScanInfoSize());
         }
         return mContainer;
     }
@@ -119,6 +124,8 @@ public class ScanFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        com.egeio.opencv.tools.Utils.setFullScreen(getActivity());
+        com.egeio.opencv.tools.Utils.hideSystemUI(getActivity());
         if (cameraView != null) {
             cameraView.onResume();
         }
@@ -145,6 +152,9 @@ public class ScanFragment extends Fragment {
     }
 
     private void takePhoto() {
+        if (cameraView.isFlashOn()) {
+
+        }
         stopSquareFind();
         final PointInfo pointInfo = findBestPointInfo();
         if (pointInfo != null) {
@@ -186,7 +196,7 @@ public class ScanFragment extends Fragment {
 
                     @Override
                     public void onImageSaved(ScanInfo scanInfo) {
-                        scanManagerInterface.getManager().addScanInfo(scanInfo);
+                        scanEditInterface.add(scanInfo);
                         debug.end("保存图片");
                         showThumbnail();
                     }
@@ -226,18 +236,31 @@ public class ScanFragment extends Fragment {
         return pointInfoLargest;
     }
 
+    private void setCachedNumber(int number) {
+        txtNumber.setVisibility(number <= 0 ? View.GONE : View.VISIBLE);
+        viewArrow.setVisibility(number <= 0 ? View.GONE : View.VISIBLE);
+        txtNumber.setText(String.valueOf(number));
+    }
+
     private void showThumbnail() {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                ArrayList<ScanInfo> scanInfoArrayList = scanManagerInterface.getManager().getScanInfoArrayList();
-                if (scanInfoArrayList.isEmpty()) {
+                final int scanSize = scanEditInterface.getScanInfoSize();
+                setCachedNumber(scanSize);
+                if (scanSize <= 0) {
                     return;
                 }
-                final ScanInfo scanInfo = scanInfoArrayList.get(scanInfoArrayList.size() - 1);
+
+                final ScanInfo scanInfo = scanEditInterface.getScanInfo(scanSize - 1);
                 final Size originSize = scanInfo.getOriginSize();
                 // 变换后的size
-                final Size perSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(scanInfo.getCurrentPointInfo().getPoints()));
+                Size perSize;
+                if (!scanInfo.matchSize()) {
+                    perSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(scanInfo.getCurrentPointInfo().getPoints()));
+                } else {
+                    perSize = new Size(originSize.width, originSize.height);
+                }
                 final int thumbnailSize = getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
                 double scale = thumbnailSize / Math.max(perSize.width, perSize.height);
                 int tarSize = (int) (Math.max(originSize.width, originSize.height) * scale);

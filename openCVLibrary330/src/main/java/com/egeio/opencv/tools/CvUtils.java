@@ -165,7 +165,7 @@ public class CvUtils {
      */
     private static Mat warpPerspective(Mat src, ScanInfo scanInfo) {
         Size currentSize = scanInfo.getOriginSize();
-        if (scanInfo.matchSize(currentSize.width, currentSize.height)) {
+        if (scanInfo.matchSize()) {
             return src;
         }
         // 截取拉伸
@@ -193,7 +193,7 @@ public class CvUtils {
             // 亮度
             // 对比度
             Mat mat = new Mat();
-            src.convertTo(mat, -1, 1.5, 10);
+            src.convertTo(mat, -1, 1.1, 5);
             //
             Mat gray = new Mat();
             Imgproc.cvtColor(mat, gray, Imgproc.COLOR_BGR2GRAY);
