@@ -103,7 +103,10 @@ public class ScanActivity extends AppCompatActivity implements ScanManagerInterf
 
     @Override
     public void remove(int index) {
-        scanDataManager.getScanInfoArrayList().remove(index);
+        try {
+            scanDataManager.getScanInfoArrayList().remove(index);
+        } catch (Exception ignored) {
+        }
         if (scanDataManager.getScanInfoArrayList().isEmpty()) {
             onBackPressed();
         }

@@ -2,8 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/black">
+    android:layout_height="match_parent">
 
     <com.egeio.opencv.CameraView
         android:id="@+id/camera_view"
@@ -14,6 +13,39 @@
         android:id="@+id/scan_info"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:id="@+id/area_info"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="@dimen/thumbnail_size"
+        android:background="@drawable/info_background"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingEnd="20dp"
+        android:paddingLeft="17dp"
+        android:paddingRight="20dp"
+        android:paddingStart="17dp">
+
+        <ImageView
+            android:id="@+id/image_info"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            app:srcCompat="@drawable/ic_file" />
+
+        <android.support.v4.widget.Space
+            android:layout_width="10dp"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/text_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="正在识别文档..."
+            android:textColor="#ffffff"
+            android:textSize="16sp" />
+    </LinearLayout>
 
     <RelativeLayout
         android:id="@+id/bottom"

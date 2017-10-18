@@ -22,6 +22,8 @@ public abstract class SquareFindWorker extends Worker {
     private Debug debug = new Debug(SquareFindWorker.class.getSimpleName());
     private SquaresTracker squaresTracker;
 
+    public abstract void startFindSquares();
+
     public abstract Mat getFrameMat();
 
     public abstract void onPointsFind(Size squareContainerSize, List<PointD> points);
@@ -39,43 +41,50 @@ public abstract class SquareFindWorker extends Worker {
             if (isWorkerStopped()) {
                 break;
             }
-            debug.clear();
-            // 检测区域
-            List<List<Point>> matList = new ArrayList<>();
-            Mat frameMat = null;
-            Size size = null;
             try {
-                debug.start("获取当前帧");
-                frameMat = getFrameMat();
-                size = frameMat.size();
-                debug.start("获取当前帧");
+                debug.clear();
+                // 检测区域
+                List<List<Point>> matList = new ArrayList<>();
+                Mat frameMat = null;
+                Size size = null;
+                try {
+                    debug.start("获取当前帧");
+                    frameMat = getFrameMat();
+                    size = frameMat.size();
+                    debug.start("获取当前帧");
+                    if (isWorkerStopped()) {
+                        break;
+                    }
+                    startFindSquares();
+                    if (frameMat != null && !frameMat.empty()) {
+                        debug.start("寻找多边形");
+                        matList.clear();
+                        //                    squaresTracker.findSquares(frameMat, matList, defaultScale);
+                        matList.addAll(squaresTracker.findLargestSquares(frameMat, defaultScale));
+                        debug.end("寻找多边形");
+                    }
+                } catch (Exception ignored) {
+                } finally {
+                    if (frameMat != null) {
+                        frameMat.release();
+                    }
+                }
                 if (isWorkerStopped()) {
                     break;
                 }
-                if (frameMat != null && !frameMat.empty()) {
-                    debug.start("寻找多边形");
-                    matList.clear();
-//                    squaresTracker.findSquares(frameMat, matList, defaultScale);
-                    matList.addAll(squaresTracker.findLargestSquares(frameMat, defaultScale));
-                    debug.end("寻找多边形");
+                if (matList.size() > 0) {
+                    List<Point> largestList = Utils.findLargestList(matList);
+                    onPointsFind(size, CvUtils.point2pointD(largestList));
+                } else {
+                    onPointsFind(null, null);
                 }
+                Log.d(TAG, "获取到了几个点" + matList.size());
             } catch (Exception e) {
                 e.printStackTrace();
-            } finally {
-                if (frameMat != null) {
-                    frameMat.release();
+                if (e instanceof WorkStoppedException) {
+                    // FIXME: 2017/10/18 此处保证数据回收
                 }
             }
-            if (isWorkerStopped()) {
-                break;
-            }
-            if (matList.size() > 0) {
-                List<Point> largestList = Utils.findLargestList(matList);
-                onPointsFind(size, CvUtils.point2pointD(largestList));
-            } else {
-                onPointsFind(null, null);
-            }
-            Log.d(TAG, "获取到了几个点" + matList.size());
         }
         Log.d(TAG, "Finish processing thread");
     }

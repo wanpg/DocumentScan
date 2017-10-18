@@ -17,6 +17,8 @@ import com.egeio.opencv.view.FragmentPagerAdapter;
 
 import org.opencv.R;
 
+import java.util.Locale;
+
 /**
  * Created by wangjinpeng on 2017/9/30.
  */
@@ -36,6 +38,8 @@ public class EditFragment extends BaseScanFragment {
     private View areaCrop, areaOptimize, areaRotate, areaDelete;
     private ImageView imageOptimize;
     private TextView textOptimize;
+    private View viewBack, viewNext;
+    private TextView textTitle;
 
     private int currentIndex;
 
@@ -74,6 +78,9 @@ public class EditFragment extends BaseScanFragment {
         areaDelete = mContainer.findViewById(R.id.area_delete);
         imageOptimize = mContainer.findViewById(R.id.image_optimize);
         textOptimize = mContainer.findViewById(R.id.text_optimize);
+        viewBack = mContainer.findViewById(R.id.view_back);
+        textTitle = mContainer.findViewById(R.id.text_title);
+        viewNext = mContainer.findViewById(R.id.text_next);
         areaCrop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -122,8 +129,35 @@ public class EditFragment extends BaseScanFragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
+                final int originSize = scanEditInterface.getScanInfoSize();
                 scanEditInterface.remove(currentItem);
                 pagerAdapter.notifyDataSetChanged();
+                final int scanInfoSize = scanEditInterface.getScanInfoSize();
+                if (scanInfoSize > 0) {
+                    int tempCurItemIndex = 0;
+                    if (currentItem == 0) {
+                        tempCurItemIndex = 0;
+                    } else if (currentItem == originSize - 1) {
+                        // 最后一张
+                        tempCurItemIndex = scanInfoSize - 1;
+                    } else {
+                        tempCurItemIndex = currentItem;
+                    }
+                    viewPager.setCurrentItem(tempCurItemIndex, true);
+                    changeOptimizeButton(tempCurItemIndex);
+                }
+            }
+        });
+        viewBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getActivity().onBackPressed();
+            }
+        });
+        viewBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
             }
         });
         pagerAdapter = new FragmentPagerAdapter(getChildFragmentManager()) {
@@ -175,6 +209,7 @@ public class EditFragment extends BaseScanFragment {
     }
 
     private void changeOptimizeButton(int position) {
+        textTitle.setText(String.format(Locale.getDefault(), "%d/%d", position + 1, scanEditInterface.getScanInfoSize()));
         final ScanInfo scanInfo = scanEditInterface.getScanInfo(position);
         imageOptimize.setImageResource(scanInfo.isOptimized() ? R.drawable.ic_reduce : R.drawable.ic_filters);
         textOptimize.setText(scanInfo.isOptimized() ? "还原" : "优化");

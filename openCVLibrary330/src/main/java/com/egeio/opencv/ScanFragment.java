@@ -3,11 +3,13 @@ package com.egeio.opencv;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -41,12 +43,19 @@ import java.util.List;
 
 public class ScanFragment extends BaseScanFragment {
 
+    private static final int MSG_AUTO_TAKE_PHOTO = 1001;
+
     private CameraView cameraView;
     private ScanInfoView scanInfoView;
     private ImageView thumbnail, flash;
     private PreviewImageView thumbnailPreview;
     private TextView txtNumber;
     private View viewArrow;
+
+    private View areaInfo;
+    private ImageView imageInfo;
+    private TextView textInfo;
+
     /**
      * 预览图按照这个比率缩小进行边框查找
      */
@@ -58,7 +67,18 @@ public class ScanFragment extends BaseScanFragment {
 
     Debug debug = new Debug(ScanFragment.class.getSimpleName());
 
-    private Handler handler = new Handler();
+    @SuppressLint("HandlerLeak")
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case MSG_AUTO_TAKE_PHOTO:
+                    takePhoto();
+                    break;
+            }
+        }
+    };
 
     ScanEditInterface scanEditInterface;
 
@@ -74,6 +94,16 @@ public class ScanFragment extends BaseScanFragment {
         OpenCVHelper.init();
     }
 
+    private void showInfo(final int drawableRes, final String info) {
+        areaInfo.setVisibility(View.VISIBLE);
+        imageInfo.setImageResource(drawableRes);
+        textInfo.setText(info);
+    }
+
+    private void hideInfo() {
+        areaInfo.setVisibility(View.GONE);
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -86,6 +116,9 @@ public class ScanFragment extends BaseScanFragment {
             flash = mContainer.findViewById(R.id.flash);
             txtNumber = mContainer.findViewById(R.id.text_num);
             viewArrow = mContainer.findViewById(R.id.view_arrow);
+            areaInfo = mContainer.findViewById(R.id.area_info);
+            imageInfo = mContainer.findViewById(R.id.image_info);
+            textInfo = mContainer.findViewById(R.id.text_info);
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -111,7 +144,6 @@ public class ScanFragment extends BaseScanFragment {
                     changeFlashResource();
                 }
             });
-            setCachedNumber(scanEditInterface.getScanInfoSize());
         }
         return mContainer;
     }
@@ -129,6 +161,8 @@ public class ScanFragment extends BaseScanFragment {
         if (cameraView != null) {
             cameraView.onResume();
         }
+        showThumbnail();
+        hideInfo();
         startSquareFind();
         changeFlashResource();
     }
@@ -152,9 +186,7 @@ public class ScanFragment extends BaseScanFragment {
     }
 
     private void takePhoto() {
-        if (cameraView.isFlashOn()) {
-
-        }
+        handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
         stopSquareFind();
         final PointInfo pointInfo = findBestPointInfo();
         if (pointInfo != null) {
@@ -168,6 +200,12 @@ public class ScanFragment extends BaseScanFragment {
         cameraView.takePhoto(new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] bytes, final Camera camera) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        hideInfo();
+                    }
+                });
                 cameraView.stopPreviewDisplay();
                 ImageSaveWorker pictureWorker = new ImageSaveWorker(
                         getContext(),
@@ -205,35 +243,6 @@ public class ScanFragment extends BaseScanFragment {
                 new Thread(pictureWorker).start();
             }
         });
-    }
-
-    /**
-     * 找到往前推最合适的point info
-     *
-     * @return
-     */
-    private PointInfo findBestPointInfo() {
-        if (pointInfoArrayList.isEmpty()) {
-            return null;
-        }
-
-        final long currentTimeMillis = System.currentTimeMillis();
-        PointInfo pointInfoLargest = null;
-        for (PointInfo pointInfo : pointInfoArrayList) {
-            final long timeDis = currentTimeMillis - pointInfo.getTime();
-            if (timeDis < 0 || timeDis > 500) {
-                continue;
-            }
-            if (pointInfoLargest == null) {
-                pointInfoLargest = pointInfo;
-            } else {
-                if (Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints())) >=
-                        Imgproc.contourArea(CvUtils.pointToMat(pointInfoLargest.getPoints()))) {
-                    pointInfoLargest = pointInfo;
-                }
-            }
-        }
-        return pointInfoLargest;
     }
 
     private void setCachedNumber(int number) {
@@ -363,22 +372,106 @@ public class ScanFragment extends BaseScanFragment {
         new Thread(squareFindWorker = new SquareFindWorker(squareFindScale) {
 
             @Override
+            public void startFindSquares() {
+            }
+
+            @Override
             public Mat getFrameMat() {
                 return cameraView.getFrameMat(squareFindScale);
             }
 
             @Override
             public void onPointsFind(Size squareContainerSize, List<PointD> points) {
+                PointInfo pointInfo = null;
                 if (squareContainerSize != null && points != null && !points.isEmpty()) {
                     scanInfoView.setPoint(
                             CvUtils.rotatePoints(points, squareContainerSize.width, squareContainerSize.height, com.egeio.opencv.tools.Utils.getCameraOrientation(getContext())),
                             squareFindScale / cameraView.getScaleRatio());
-                    pointInfoArrayList.add(new PointInfo(points));
+                    synchronized (ScanFragment.this) {
+                        pointInfoArrayList.add(pointInfo = new PointInfo(points));
+                    }
                 } else {
                     scanInfoView.clear();
                 }
+                assertWorkStopped();
+                final PointInfo finalPointInfo = pointInfo;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        checkAndAutoTakePhoto(finalPointInfo);
+                    }
+                });
             }
         }).start();
+    }
+
+    private void checkAndAutoTakePhoto(PointInfo latestPointInfo) {
+        synchronized (ScanFragment.this) {
+            int matchCount = 0;
+            if (latestPointInfo != null) {
+                final int size = pointInfoArrayList.size();
+                if (size > 2) {
+                    final long currentTimeMillis = System.currentTimeMillis();
+                    double currentInfoArea = Imgproc.contourArea(CvUtils.pointToMat(latestPointInfo.getPoints()));
+                    for (int i = size - 1; i >= 0; i--) {
+                        PointInfo pointInfo = pointInfoArrayList.get(i);
+                        final long timeDis = currentTimeMillis - pointInfo.getTime();
+                        if (timeDis < 0 || timeDis > 500) {
+                            if (latestPointInfo != pointInfo) {
+                                final double contourArea = Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints()));
+                                if (Math.abs((contourArea - currentInfoArea) / currentInfoArea) < 0.01d) {
+                                    matchCount++;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (matchCount >= 5) {
+                if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
+                    showInfo(R.drawable.ic_file, "请勿移动，正在扫描...");
+                    handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1500);
+                }
+            } else if (matchCount <= 0) {
+                handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
+                showInfo(R.drawable.ic_file, "正在识别文档...");
+            } else {
+                if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
+                    showInfo(R.drawable.ic_file, "正在识别文档...");
+                }
+            }
+        }
+    }
+
+    /**
+     * 找到往前推最合适的point info
+     *
+     * @return
+     */
+    private PointInfo findBestPointInfo() {
+        if (pointInfoArrayList.isEmpty()) {
+            return null;
+        }
+
+        final long currentTimeMillis = System.currentTimeMillis();
+        PointInfo pointInfoLargest = null;
+        for (PointInfo pointInfo : pointInfoArrayList) {
+            final long timeDis = currentTimeMillis - pointInfo.getTime();
+            if (timeDis < 0 || timeDis > 500) {
+                continue;
+            }
+            if (pointInfoLargest == null) {
+                pointInfoLargest = pointInfo;
+            } else {
+                if (Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints())) >=
+                        Imgproc.contourArea(CvUtils.pointToMat(pointInfoLargest.getPoints()))) {
+                    pointInfoLargest = pointInfo;
+                }
+            }
+        }
+        return pointInfoLargest;
     }
 
     private void stopSquareFind() {
