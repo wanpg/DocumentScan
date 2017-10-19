@@ -16,8 +16,7 @@ import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.view.FragmentPagerAdapter;
 import com.egeio.opencv.view.LoadingInfoHolder;
 import com.egeio.opencv.work.GeneratePdfWorker;
-
-import org.opencv.R;
+import com.egeio.scan.R;
 
 import java.util.Locale;
 

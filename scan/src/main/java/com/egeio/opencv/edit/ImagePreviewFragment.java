@@ -17,8 +17,8 @@ import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.work.Worker;
+import com.egeio.scan.R;
 
-import org.opencv.R;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;

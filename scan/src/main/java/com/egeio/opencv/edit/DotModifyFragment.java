@@ -19,8 +19,8 @@ import com.egeio.opencv.view.DotModifyView;
 import com.egeio.opencv.view.DotZoomView;
 import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.work.Worker;
+import com.egeio.scan.R;
 
-import org.opencv.R;
 import org.opencv.core.Size;
 
 import java.util.List;

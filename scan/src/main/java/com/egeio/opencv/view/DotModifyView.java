@@ -21,10 +21,10 @@ import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Utils;
+import com.egeio.scan.R;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
-import org.opencv.R;
 import org.opencv.core.Size;
 
 import java.util.ArrayList;

@@ -4,7 +4,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import org.opencv.R;
+import com.egeio.scan.R;
 
 /**
  * Created by wangjinpeng on 2017/10/19.

@@ -20,8 +20,7 @@ import android.view.View;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.Utils;
-
-import org.opencv.R;
+import com.egeio.scan.R;
 
 import java.util.List;
 

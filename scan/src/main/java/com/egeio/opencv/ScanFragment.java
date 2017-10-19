@@ -31,8 +31,8 @@ import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.view.ScanInfoView;
 import com.egeio.opencv.work.ImageSaveWorker;
 import com.egeio.opencv.work.SquareFindWorker;
+import com.egeio.scan.R;
 
-import org.opencv.R;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
