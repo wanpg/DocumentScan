@@ -26,6 +26,7 @@ import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.tools.MatBitmapTransformation;
+import com.egeio.opencv.view.LoadingInfoHolder;
 import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.view.ScanInfoView;
 import com.egeio.opencv.work.ImageSaveWorker;
@@ -52,9 +53,8 @@ public class ScanFragment extends BaseScanFragment {
     private TextView txtNumber;
     private View viewArrow;
 
-    private View areaInfo;
-    private ImageView imageInfo;
-    private TextView textInfo;
+    private LoadingInfoHolder loadingInfoHolder;
+
 
     /**
      * 预览图按照这个比率缩小进行边框查找
@@ -94,16 +94,6 @@ public class ScanFragment extends BaseScanFragment {
         OpenCVHelper.init();
     }
 
-    private void showInfo(final int drawableRes, final String info) {
-        areaInfo.setVisibility(View.VISIBLE);
-        imageInfo.setImageResource(drawableRes);
-        textInfo.setText(info);
-    }
-
-    private void hideInfo() {
-        areaInfo.setVisibility(View.GONE);
-    }
-
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -116,9 +106,7 @@ public class ScanFragment extends BaseScanFragment {
             flash = mContainer.findViewById(R.id.flash);
             txtNumber = mContainer.findViewById(R.id.text_num);
             viewArrow = mContainer.findViewById(R.id.view_arrow);
-            areaInfo = mContainer.findViewById(R.id.area_info);
-            imageInfo = mContainer.findViewById(R.id.image_info);
-            textInfo = mContainer.findViewById(R.id.text_info);
+            loadingInfoHolder = new LoadingInfoHolder(mContainer.findViewById(R.id.area_info));
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -162,7 +150,7 @@ public class ScanFragment extends BaseScanFragment {
             cameraView.onResume();
         }
         showThumbnail();
-        hideInfo();
+        loadingInfoHolder.hideInfo();
         startSquareFind();
         changeFlashResource();
     }
@@ -203,7 +191,7 @@ public class ScanFragment extends BaseScanFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        hideInfo();
+                        loadingInfoHolder.hideInfo();
                     }
                 });
                 cameraView.stopPreviewDisplay();
@@ -431,15 +419,15 @@ public class ScanFragment extends BaseScanFragment {
             }
             if (matchCount >= 5) {
                 if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                    showInfo(R.drawable.ic_file, "请勿移动，正在扫描...");
+                    loadingInfoHolder.showInfo(R.drawable.ic_file, "请勿移动，正在扫描...");
                     handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1500);
                 }
             } else if (matchCount <= 0) {
                 handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
-                showInfo(R.drawable.ic_file, "正在识别文档...");
+                loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
             } else {
                 if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                    showInfo(R.drawable.ic_file, "正在识别文档...");
+                    loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
                 }
             }
         }

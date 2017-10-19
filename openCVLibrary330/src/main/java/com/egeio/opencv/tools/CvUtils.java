@@ -1,11 +1,8 @@
 package com.egeio.opencv.tools;
 
-import android.graphics.Bitmap;
-
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.ScanInfo;
 
-import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -77,37 +74,6 @@ public class CvUtils {
         return pointDRotated;
     }
 
-    /**
-     * @param bitmapSrc
-     * @param alpha     对比度
-     * @param beta      亮度
-     * @return
-     */
-    public static Bitmap modifyContrast(Bitmap bitmapSrc, double alpha, int beta) {
-        Mat mat = new Mat();
-        org.opencv.android.Utils.bitmapToMat(bitmapSrc, mat);
-        Mat matNew = new Mat();
-        mat.convertTo(matNew, -1, alpha, beta);
-//        Mat matNew = OpenCVHelper.changeContrastAndBrightness(mat, 2.2, 50);
-        Bitmap bitmap = Bitmap.createBitmap(matNew.width(), matNew.height(), Bitmap.Config.RGB_565);
-        org.opencv.android.Utils.matToBitmap(matNew, bitmap);
-        return bitmap;
-    }
-
-    public static Bitmap gray(Bitmap bitmapSrc) {
-        Mat src = new Mat();
-        Utils.bitmapToMat(bitmapSrc, src);
-        Mat mat = new Mat();
-        Imgproc.cvtColor(src, mat, Imgproc.COLOR_BGR2GRAY);
-        Bitmap bitmap = Bitmap.createBitmap(mat.width(), mat.height(), Bitmap.Config.RGB_565);
-        org.opencv.android.Utils.matToBitmap(mat, bitmap);
-//        Mat gray = new Mat(mat.size(), mat.type());
-//        Imgproc.threshold(mat, gray, 250, 255, 1);
-//        Bitmap bitmap = Bitmap.createBitmap(gray.width(), gray.height(), Bitmap.Config.RGB_565);
-//        org.opencv.android.Utils.matToBitmap(gray, bitmap);
-        return bitmap;
-    }
-
     public static Mat formatFromScanInfo(Mat src, ScanInfo scanInfo) {
         Mat frameMat = src;
         // 旋转
@@ -129,7 +95,7 @@ public class CvUtils {
      * @param scanInfo
      * @return
      */
-    private static Mat rotate(Mat mat, ScanInfo scanInfo) {
+    public static Mat rotate(Mat mat, ScanInfo scanInfo) {
         ScanInfo.Angle rotateAngle = scanInfo.getRotateAngle();
         // 旋转
         Mat rotatedMat;
@@ -206,14 +172,14 @@ public class CvUtils {
     }
 
     public static int calculateInSampleSize(
-            int imageWidth, int imageheight, int reqWidth, int reqHeight) {
+            int imageWidth, int imageHeight, int reqWidth, int reqHeight) {
         // Raw height and width of image
         int inSampleSize = 1;
 
-        if (imageWidth > reqHeight || imageheight > reqWidth) {
+        if (imageWidth > reqHeight || imageHeight > reqWidth) {
 
             final int halfHeight = imageWidth / 2;
-            final int halfWidth = imageheight / 2;
+            final int halfWidth = imageHeight / 2;
 
             // Calculate the largest inSampleSize value that is a power of 2 and keeps both
             // height and width larger than the requested height and width.

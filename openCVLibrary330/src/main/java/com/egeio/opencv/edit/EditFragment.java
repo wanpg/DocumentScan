@@ -14,6 +14,8 @@ import com.egeio.opencv.BaseScanFragment;
 import com.egeio.opencv.ScanEditInterface;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.view.FragmentPagerAdapter;
+import com.egeio.opencv.view.LoadingInfoHolder;
+import com.egeio.opencv.work.GeneratePdfWorker;
 
 import org.opencv.R;
 
@@ -43,6 +45,8 @@ public class EditFragment extends BaseScanFragment {
 
     private int currentIndex;
 
+    private LoadingInfoHolder loadingInfoHolder;
+
     private ScanEditInterface scanEditInterface;
     private FragmentPagerAdapter pagerAdapter;
 
@@ -71,6 +75,7 @@ public class EditFragment extends BaseScanFragment {
     }
 
     private void initView() {
+        loadingInfoHolder = new LoadingInfoHolder(mContainer.findViewById(R.id.area_info));
         viewPager = mContainer.findViewById(R.id.view_pager);
         areaCrop = mContainer.findViewById(R.id.area_crop);
         areaOptimize = mContainer.findViewById(R.id.area_optimize);
@@ -154,10 +159,10 @@ public class EditFragment extends BaseScanFragment {
                 getActivity().onBackPressed();
             }
         });
-        viewBack.setOnClickListener(new View.OnClickListener() {
+        viewNext.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                generatePdf();
             }
         });
         pagerAdapter = new FragmentPagerAdapter(getChildFragmentManager()) {
@@ -206,6 +211,7 @@ public class EditFragment extends BaseScanFragment {
         });
         viewPager.setCurrentItem(currentIndex);
         changeOptimizeButton(currentIndex);
+        loadingInfoHolder.hideInfo();
     }
 
     private void changeOptimizeButton(int position) {
@@ -219,5 +225,21 @@ public class EditFragment extends BaseScanFragment {
     public boolean onBackPressed() {
         scanEditInterface.toCamera();
         return true;
+    }
+
+    void generatePdf() {
+        loadingInfoHolder.showLoading("正在生成pdf");
+        new Thread(new GeneratePdfWorker(getContext(), scanEditInterface.getAll()) {
+            @Override
+            public void onPdfGenerated(final String savePath) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadingInfoHolder.hideInfo();
+                        scanEditInterface.onPdfGenerated(savePath);
+                    }
+                });
+            }
+        }).start();
     }
 }

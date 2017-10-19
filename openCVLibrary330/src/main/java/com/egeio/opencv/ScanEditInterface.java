@@ -2,6 +2,8 @@ package com.egeio.opencv;
 
 import com.egeio.opencv.model.ScanInfo;
 
+import java.util.List;
+
 /**
  * Created by wangjinpeng on 2017/10/16.
  */
@@ -23,4 +25,8 @@ public interface ScanEditInterface {
     void remove(int index);
 
     void add(ScanInfo scanInfo);
+
+    List<ScanInfo> getAll();
+
+    void onPdfGenerated(String savePath);
 }

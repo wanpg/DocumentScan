@@ -38,6 +38,42 @@ import java.util.List;
 
 public class Utils {
 
+    public static void createFile(String filePath) {
+        File file = new File(filePath);
+        final File parentFile = file.getParentFile();
+        if (!parentFile.exists()) {
+            parentFile.mkdirs();
+        }
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取文件后缀
+     *
+     * @param path
+     * @return
+     */
+    public static String getFileExtension(String path) {
+        String suffix = null;
+        File file = new File(path);
+        if (file.exists()) {
+            String name = file.getName();
+            final int idx = name.lastIndexOf(".");
+            if (idx > 0) {
+                suffix = name.substring(idx + 1);
+            }
+        }
+        return suffix;
+    }
+
+    public static String getPdfSavePath(Context context, String name) {
+        return context.getExternalCacheDir() + File.separator + "pdf" + File.separator + name;
+    }
+
     public static String getSaveFolder(Context context) {
         return context.getExternalCacheDir() + File.separator + "photo";
     }
