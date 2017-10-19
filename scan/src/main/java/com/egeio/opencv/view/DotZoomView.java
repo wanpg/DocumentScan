@@ -67,7 +67,8 @@ public class DotZoomView extends View {
     }
 
     /**
-     * @param dotPointD 显示图片对应坐标系的当前的点
+     * @param dotPointD  显示图片对应坐标系的当前的点
+     * @param pointDList
      */
     public void drawDot(PointD dotPointD, List<PointD> pointDList) {
         this.dotPointD = dotPointD;

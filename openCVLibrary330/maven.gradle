@@ -1,0 +1,64 @@
+// *********************************************************************
+apply plugin: 'maven-publish'
+apply plugin: 'signing' //使用signing plugin做数字签名
+
+group = GROUP
+version = VERSION
+
+signing {
+    required { isReleaseBuild() && gradle.taskGraph.hasTask("uploadArchives") }
+    sign configurations.archives
+}
+
+// 判断版本是Release or Snapshots
+def isReleaseBuild() {
+    return !version.contains("SNAPSHOT")
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+publishing {
+    publications {
+        OpenCv(MavenPublication) {
+            artifactId 'opencv'
+            artifact("$buildDir/outputs/aar/${project.getName()}-release.aar")
+            artifact(sourcesJar)
+        }
+    }
+}
+
+publishing {
+    publications {
+        OpenCv(MavenPublication) {
+            pom.withXml {
+                asNode().appendNode('description', 'OpenCV的库')
+            }
+        }
+    }
+}
+
+publishing {
+    repositories {
+        //指定项目部署到的中央库地址，UserName和Password就是Part 1中注册的账号。
+        if (DEBUG) {
+            maven {
+                url TEST_REPO
+            }
+        } else {
+            maven {
+                url SNAPSHOT_URL
+                credentials {
+                    username = USER_NAME
+                    password = PASSWORD
+                }
+            }
+        }
+    }
+}

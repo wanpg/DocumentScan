@@ -1,5 +1,6 @@
-package com.egeio.opencv.edit;
+package com.egeio.opencv.fragment;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -10,9 +11,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.egeio.opencv.BaseScanFragment;
-import com.egeio.opencv.ScanEditInterface;
+import com.egeio.opencv.ScanDataInterface;
+import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.model.ScanInfo;
+import com.egeio.opencv.tools.SysUtils;
 import com.egeio.opencv.view.FragmentPagerAdapter;
 import com.egeio.opencv.view.LoadingInfoHolder;
 import com.egeio.opencv.work.GeneratePdfWorker;
@@ -46,14 +48,17 @@ public class EditFragment extends BaseScanFragment {
 
     private LoadingInfoHolder loadingInfoHolder;
 
-    private ScanEditInterface scanEditInterface;
     private FragmentPagerAdapter pagerAdapter;
+
+    private ScanDataInterface scanDataInterface;
+    private ScanDataManager scanDataManager;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         currentIndex = getArguments().getInt("INDEX");
-        scanEditInterface = (ScanEditInterface) getActivity();
+        scanDataInterface = (ScanDataInterface) getActivity();
+        scanDataManager = scanDataInterface.getScanDataManager();
     }
 
     @Nullable
@@ -61,6 +66,9 @@ public class EditFragment extends BaseScanFragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_edit, null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                mContainer.setPadding(0, SysUtils.getStatusBarHeight(getContext()), 0, 0);
+            }
             initView();
         }
         return mContainer;
@@ -69,8 +77,8 @@ public class EditFragment extends BaseScanFragment {
     @Override
     public void onResume() {
         super.onResume();
-        com.egeio.opencv.tools.Utils.removeFullScreen(getActivity());
-        com.egeio.opencv.tools.Utils.showSystemUI(getActivity());
+        SysUtils.removeFullScreen(getActivity());
+        SysUtils.showSystemUI(getActivity());
     }
 
     private void initView() {
@@ -89,15 +97,15 @@ public class EditFragment extends BaseScanFragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                final ScanInfo scanInfo = scanEditInterface.getScanInfo(currentItem);
-                scanEditInterface.toDotModify(scanInfo);
+                final ScanInfo scanInfo = scanDataManager.getScanInfo(currentItem);
+                scanDataInterface.toDotModify(scanInfo);
             }
         });
         areaOptimize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                final ScanInfo scanInfo = scanEditInterface.getScanInfo(currentItem);
+                final ScanInfo scanInfo = scanDataManager.getScanInfo(currentItem);
                 if (scanInfo != null) {
                     scanInfo.setOptimized(!scanInfo.isOptimized());
                     String tag = FragmentPagerAdapter.makeFragmentName(viewPager.getId(), pagerAdapter.getItemId(currentItem));
@@ -113,7 +121,7 @@ public class EditFragment extends BaseScanFragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                final ScanInfo scanInfo = scanEditInterface.getScanInfo(currentItem);
+                final ScanInfo scanInfo = scanDataManager.getScanInfo(currentItem);
                 if (scanInfo != null) {
                     int value = scanInfo.getRotateAngle().getValue();
                     value += 270;// 逆时针旋转
@@ -133,10 +141,10 @@ public class EditFragment extends BaseScanFragment {
             @Override
             public void onClick(View v) {
                 int currentItem = viewPager.getCurrentItem();
-                final int originSize = scanEditInterface.getScanInfoSize();
-                scanEditInterface.remove(currentItem);
+                final int originSize = scanDataManager.getScanInfoSize();
+                scanDataManager.remove(currentItem);
                 pagerAdapter.notifyDataSetChanged();
-                final int scanInfoSize = scanEditInterface.getScanInfoSize();
+                final int scanInfoSize = scanDataManager.getScanInfoSize();
                 if (scanInfoSize > 0) {
                     int tempCurItemIndex = 0;
                     if (currentItem == 0) {
@@ -149,6 +157,8 @@ public class EditFragment extends BaseScanFragment {
                     }
                     viewPager.setCurrentItem(tempCurItemIndex, true);
                     changeOptimizeButton(tempCurItemIndex);
+                } else {
+                    getActivity().onBackPressed();
                 }
             }
         });
@@ -168,24 +178,24 @@ public class EditFragment extends BaseScanFragment {
 
             @Override
             public int getCount() {
-                return scanEditInterface.getScanInfoSize();
+                return scanDataManager.getScanInfoSize();
             }
 
             @Override
             public Fragment getItem(int position) {
-                return ImagePreviewFragment.createInstance(scanEditInterface.getScanInfo(position));
+                return ImagePreviewFragment.createInstance(scanDataManager.getScanInfo(position));
             }
 
             @Override
             public long getItemId(int position) {
-                return scanEditInterface.getScanInfo(position).getPath().hashCode();
+                return scanDataManager.getScanInfo(position).getPath().hashCode();
             }
 
             @Override
             public int getItemPosition(Object object) {
                 if (object instanceof ImagePreviewFragment) {
                     final ScanInfo scanInfo = ((ImagePreviewFragment) object).getScanInfo();
-                    final int index = scanEditInterface.indexOfScanInfo(scanInfo);
+                    final int index = scanDataManager.indexOfScanInfo(scanInfo);
                     return index != -1 ? index : POSITION_NONE;
                 }
                 return super.getItemPosition(object);
@@ -214,28 +224,28 @@ public class EditFragment extends BaseScanFragment {
     }
 
     private void changeOptimizeButton(int position) {
-        textTitle.setText(String.format(Locale.getDefault(), "%d/%d", position + 1, scanEditInterface.getScanInfoSize()));
-        final ScanInfo scanInfo = scanEditInterface.getScanInfo(position);
+        textTitle.setText(String.format(Locale.getDefault(), "%d/%d", position + 1, scanDataManager.getScanInfoSize()));
+        final ScanInfo scanInfo = scanDataManager.getScanInfo(position);
         imageOptimize.setImageResource(scanInfo.isOptimized() ? R.drawable.ic_reduce : R.drawable.ic_filters);
         textOptimize.setText(scanInfo.isOptimized() ? "还原" : "优化");
     }
 
     @Override
     public boolean onBackPressed() {
-        scanEditInterface.toCamera();
+        scanDataInterface.toCamera();
         return true;
     }
 
     void generatePdf() {
         loadingInfoHolder.showLoading("正在生成pdf");
-        new Thread(new GeneratePdfWorker(getContext(), scanEditInterface.getAll()) {
+        new Thread(new GeneratePdfWorker(getContext(), scanDataManager.getAll()) {
             @Override
             public void onPdfGenerated(final String savePath) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         loadingInfoHolder.hideInfo();
-                        scanEditInterface.onPdfGenerated(savePath);
+                        scanDataInterface.onPdfGenerated(savePath);
                     }
                 });
             }

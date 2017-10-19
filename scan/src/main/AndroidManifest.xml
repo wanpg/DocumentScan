@@ -1,2 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.egeio.scan" />
+    package="com.egeio.scan" >
+
+    <uses-permission android:name="android.permission.VIBRATE" />
+</manifest>

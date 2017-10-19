@@ -1,4 +1,4 @@
-package com.egeio.opencv;
+package com.egeio.opencv.view;
 
 import android.content.Context;
 import android.graphics.ImageFormat;
@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 照相机View，会将照相机按照比例fit给surfaceView

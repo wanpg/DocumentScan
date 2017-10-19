@@ -72,7 +72,7 @@ public abstract class ImageSaveWorker extends Worker {
             }
             pointInfoTemp = new PointInfo(points, pointInfo.getTime());
         }
-        String savePath = Utils.getSavePath(context);
+        String savePath = Utils.getPictureFilePath(context);
 
         ScanInfo scanInfo = new ScanInfo(savePath, pointInfoTemp, cameraOrientation, pictureSize.width, pictureSize.height);
         onImageCropPreview(scanInfo);

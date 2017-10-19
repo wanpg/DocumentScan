@@ -1,4 +1,4 @@
-package com.egeio.opencv.edit;
+package com.egeio.opencv.fragment;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,7 +9,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.egeio.opencv.BaseScanFragment;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
@@ -133,7 +132,7 @@ public class ImagePreviewFragment extends BaseScanFragment {
                     final PointInfo currentPointInfo = scanInfo.getCurrentPointInfo();
                     final ArrayList<PointD> points = currentPointInfo.getPoints();
                     Size perspectiveSize;
-                    if (scanInfo.matchSize()) {
+                    if (!scanInfo.matchSize()) {
                         perspectiveSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(points));
                     } else {
                         perspectiveSize = new Size(originSize.width, originSize.height);

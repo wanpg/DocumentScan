@@ -1,6 +1,7 @@
 package com.egeio.opencv.tools;
 
 import com.egeio.opencv.model.PointD;
+import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 
 import org.opencv.core.Core;
@@ -142,8 +143,13 @@ public class CvUtils {
         for (PointD point : pointDList) {
             pointList.add(new Point(point.x * ratioW, point.y * ratioH));
         }
-        Mat mat = com.egeio.opencv.tools.Utils.warpPerspective(src, pointList);
-        src.release();
+        Mat mat;
+        try {
+            mat = Utils.warpPerspective(src, pointList);
+            src.release();
+        } catch (Exception e) {
+            mat = src;
+        }
         return mat;
     }
 
@@ -197,5 +203,34 @@ public class CvUtils {
         rotated.width = angle == 90 || angle == 270 ? size.height : size.width;
         rotated.height = angle == 90 || angle == 270 ? size.width : size.height;
         return rotated;
+    }
+
+    /**
+     * 找到往前推最合适的point info
+     *
+     * @return
+     */
+    public static PointInfo findBestPointInfo(List<PointInfo> pointInfoArrayList) {
+        if (pointInfoArrayList == null || pointInfoArrayList.isEmpty()) {
+            return null;
+        }
+
+        final long currentTimeMillis = System.currentTimeMillis();
+        PointInfo pointInfoLargest = null;
+        for (PointInfo pointInfo : pointInfoArrayList) {
+            final long timeDis = currentTimeMillis - pointInfo.getTime();
+            if (timeDis < 0 || timeDis > 500) {
+                continue;
+            }
+            if (pointInfoLargest == null) {
+                pointInfoLargest = pointInfo;
+            } else {
+                if (Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints())) >=
+                        Imgproc.contourArea(CvUtils.pointToMat(pointInfoLargest.getPoints()))) {
+                    pointInfoLargest = pointInfo;
+                }
+            }
+        }
+        return pointInfoLargest;
     }
 }

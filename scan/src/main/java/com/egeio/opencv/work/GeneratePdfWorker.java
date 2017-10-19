@@ -39,7 +39,7 @@ public abstract class GeneratePdfWorker extends Worker {
         this.context = context;
         this.scanInfoList = scanInfoList;
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssS", Locale.getDefault());
-        savePath = Utils.getPdfSavePath(context, String.format(Locale.getDefault(), "新文档_%s.pdf", dateFormat.format(System.currentTimeMillis())));
+        savePath = Utils.getPdfFilePath(context, String.format(Locale.getDefault(), "新文档_%s.pdf", dateFormat.format(System.currentTimeMillis())));
     }
 
     @Override

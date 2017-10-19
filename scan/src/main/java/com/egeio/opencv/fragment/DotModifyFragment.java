@@ -1,7 +1,8 @@
-package com.egeio.opencv.edit;
+package com.egeio.opencv.fragment;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -9,12 +10,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.egeio.opencv.BaseScanFragment;
-import com.egeio.opencv.ScanEditInterface;
+import com.egeio.opencv.ScanDataInterface;
+import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
+import com.egeio.opencv.tools.SysUtils;
 import com.egeio.opencv.view.DotModifyView;
 import com.egeio.opencv.view.DotZoomView;
 import com.egeio.opencv.view.PreviewImageView;
@@ -44,14 +46,16 @@ public class DotModifyFragment extends BaseScanFragment {
     private PreviewImageView imagePreviewView;
     private DotZoomView dotZoomView;
     private ScanInfo scanInfo;
-    private ScanEditInterface scanEditInterface;
+    private ScanDataInterface scanDataInterface;
+    private ScanDataManager scanDataManager;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         final int index = getArguments().getInt("INDEX");
-        scanEditInterface = (ScanEditInterface) getActivity();
-        scanInfo = scanEditInterface.getScanInfo(index);
+        scanDataInterface = (ScanDataInterface) getActivity();
+        scanDataManager = scanDataInterface.getScanDataManager();
+        scanInfo = scanDataManager.getScanInfo(index);
     }
 
     @Nullable
@@ -59,9 +63,19 @@ public class DotModifyFragment extends BaseScanFragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_dot_modify, null);
+
             dotModifyView = mContainer.findViewById(R.id.dot_modify);
             imagePreviewView = mContainer.findViewById(R.id.image_preview);
             dotZoomView = mContainer.findViewById(R.id.dot_zoom);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                final int statusBarHeight = SysUtils.getStatusBarHeight(getContext());
+                mContainer.findViewById(R.id.area_image).setPadding(0, statusBarHeight, 0, 0);
+                dotZoomView.setPadding(
+                        dotZoomView.getPaddingLeft(),
+                        dotZoomView.getPaddingTop() + statusBarHeight,
+                        dotZoomView.getPaddingRight(),
+                        dotZoomView.getPaddingBottom());
+            }
             mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -73,7 +87,7 @@ public class DotModifyFragment extends BaseScanFragment {
                 public void onClick(View v) {
                     final List<PointD> modifiedPoints = dotModifyView.getModifiedPoints();
                     scanInfo.setCurrentPointInfo(new PointInfo(modifiedPoints));
-                    scanEditInterface.toEditPreview(scanInfo);
+                    scanDataInterface.toEditPreview(scanInfo);
                 }
             });
             dotModifyView.setOnDotChangeListener(new DotModifyView.OnDotChangeListener() {
@@ -139,7 +153,7 @@ public class DotModifyFragment extends BaseScanFragment {
 
     @Override
     public boolean onBackPressed() {
-        scanEditInterface.toEditPreview(scanInfo);
+        scanDataInterface.toEditPreview(scanInfo);
         return true;
     }
 }

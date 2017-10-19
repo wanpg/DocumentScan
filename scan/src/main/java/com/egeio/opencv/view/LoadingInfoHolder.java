@@ -1,9 +1,11 @@
 package com.egeio.opencv.view;
 
+import android.animation.ObjectAnimator;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.egeio.opencv.tools.AnimUtils;
 import com.egeio.scan.R;
 
 /**
@@ -31,6 +33,11 @@ public class LoadingInfoHolder {
 
     public void hideInfo() {
         areaLoading.setVisibility(View.GONE);
+    }
+
+    public void shakeInfo() {
+        final ObjectAnimator nope = AnimUtils.nope(areaLoading);
+        nope.start();
     }
 
     public void showLoading(String loadingInfo) {

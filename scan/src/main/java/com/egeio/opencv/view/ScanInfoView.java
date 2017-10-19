@@ -55,7 +55,7 @@ public class ScanInfoView extends View {
         postInvalidate();
     }
 
-    public void clear() {
+    public synchronized void clear() {
         if (pointList.isEmpty()) {
             return;
         }

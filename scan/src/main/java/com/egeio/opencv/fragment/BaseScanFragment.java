@@ -1,4 +1,4 @@
-package com.egeio.opencv;
+package com.egeio.opencv.fragment;
 
 import android.support.v4.app.Fragment;
 

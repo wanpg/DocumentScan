@@ -1,4 +1,4 @@
-package com.egeio.opencv;
+package com.egeio.opencv.fragment;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -10,6 +10,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -20,12 +21,16 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.ImageViewTarget;
+import com.egeio.opencv.ScanDataInterface;
+import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.tools.MatBitmapTransformation;
+import com.egeio.opencv.tools.SysUtils;
+import com.egeio.opencv.view.CameraView;
 import com.egeio.opencv.view.LoadingInfoHolder;
 import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.view.ScanInfoView;
@@ -39,12 +44,19 @@ import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-public class ScanFragment extends BaseScanFragment {
+import static com.egeio.opencv.DocumentScan.MAX_PAGE_NUM;
+import static com.egeio.opencv.DocumentScan.SQUARE_FIND_SCALE;
+import static com.egeio.opencv.tools.CvUtils.findBestPointInfo;
+
+public class ScanFragment extends BaseScanFragment implements Observer {
 
     private static final int MSG_AUTO_TAKE_PHOTO = 1001;
+    private static final int MSG_SHOW_MAX_PAGE_TIP = 1002;
 
     private CameraView cameraView;
     private ScanInfoView scanInfoView;
@@ -55,17 +67,21 @@ public class ScanFragment extends BaseScanFragment {
 
     private LoadingInfoHolder loadingInfoHolder;
 
-
-    /**
-     * 预览图按照这个比率缩小进行边框查找
-     */
-    private final float squareFindScale = 0.125f;
-    private final ArrayList<PointInfo> pointInfoArrayList = new ArrayList<>();
+    private final List<PointInfo> pointInfoArrayList = new CopyOnWriteArrayList<>();
 
     private View mContainer;
     private SquareFindWorker squareFindWorker;
 
     Debug debug = new Debug(ScanFragment.class.getSimpleName());
+
+    final Object lockObject = new Object();
+
+    private SoftReference<Bitmap> cachedPreviewBitmap;
+
+    /**
+     * 标记照片正在拍照并执行动画的过程
+     */
+    private boolean isPictureTaking = false;
 
     @SuppressLint("HandlerLeak")
     private Handler handler = new Handler() {
@@ -76,22 +92,21 @@ public class ScanFragment extends BaseScanFragment {
                 case MSG_AUTO_TAKE_PHOTO:
                     takePhoto();
                     break;
+                case MSG_SHOW_MAX_PAGE_TIP:
+                    loadingInfoHolder.showInfo(R.drawable.ic_tips, "扫描数量已达上限");
+                    break;
             }
         }
     };
 
-    ScanEditInterface scanEditInterface;
+    private ScanDataInterface scanDataInterface;
+    private ScanDataManager scanDataManager;
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        scanEditInterface = (ScanEditInterface) getActivity();
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        OpenCVHelper.init();
+        scanDataInterface = (ScanDataInterface) getActivity();
+        scanDataManager = scanDataInterface.getScanDataManager();
     }
 
     @Nullable
@@ -116,13 +131,18 @@ public class ScanFragment extends BaseScanFragment {
             mContainer.findViewById(R.id.lens).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    takePhoto();
+                    if (scanDataManager.getScanInfoSize() >= MAX_PAGE_NUM) {
+                        SysUtils.performVibrator(getContext());
+                        loadingInfoHolder.shakeInfo();
+                    } else {
+                        takePhoto();
+                    }
                 }
             });
             thumbnail.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    scanEditInterface.toEditPreview(null);
+                    scanDataInterface.toEditPreview(null);
                 }
             });
             flash.setOnClickListener(new View.OnClickListener() {
@@ -144,15 +164,20 @@ public class ScanFragment extends BaseScanFragment {
     @Override
     public void onResume() {
         super.onResume();
-        com.egeio.opencv.tools.Utils.setFullScreen(getActivity());
-        com.egeio.opencv.tools.Utils.hideSystemUI(getActivity());
+        SysUtils.setFullScreen(getActivity());
+        SysUtils.hideSystemUI(getActivity());
         if (cameraView != null) {
             cameraView.onResume();
         }
+        if (scanDataManager.getScanInfoSize() > MAX_PAGE_NUM) {
+            handler.sendEmptyMessage(MSG_SHOW_MAX_PAGE_TIP);
+        } else {
+            loadingInfoHolder.hideInfo();
+        }
         showThumbnail();
-        loadingInfoHolder.hideInfo();
         startSquareFind();
         changeFlashResource();
+        scanDataManager.addObserver(this);
     }
 
     @Override
@@ -163,6 +188,7 @@ public class ScanFragment extends BaseScanFragment {
         }
         stopSquareFind();
         changeFlashResource();
+        scanDataManager.deleteObserver(this);
     }
 
     @Override
@@ -175,13 +201,18 @@ public class ScanFragment extends BaseScanFragment {
 
     private void takePhoto() {
         handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
-        stopSquareFind();
-        final PointInfo pointInfo = findBestPointInfo();
+        synchronized (lockObject) {
+            if (isPictureTaking) {
+                return;
+            }
+            isPictureTaking = true;
+        }
+        final PointInfo pointInfo = findBestPointInfo(pointInfoArrayList);
         if (pointInfo != null) {
             final Size previewSize = cameraView.getPreviewSize();
             scanInfoView.setPoint(
-                    CvUtils.rotatePoints(pointInfo.getPoints(), previewSize.width * squareFindScale, previewSize.height * squareFindScale, com.egeio.opencv.tools.Utils.getCameraOrientation(getContext())),
-                    squareFindScale / cameraView.getScaleRatio());
+                    CvUtils.rotatePoints(pointInfo.getPoints(), previewSize.width * SQUARE_FIND_SCALE, previewSize.height * SQUARE_FIND_SCALE, com.egeio.opencv.tools.Utils.getCameraOrientation(getContext())),
+                    SQUARE_FIND_SCALE / cameraView.getScaleRatio());
         } else {
             scanInfoView.clear();
         }
@@ -200,7 +231,7 @@ public class ScanFragment extends BaseScanFragment {
                         bytes,
                         camera,
                         pointInfo,
-                        squareFindScale) {
+                        SQUARE_FIND_SCALE) {
 
                     @Override
                     public void onImageCropPreview(ScanInfo scanInfo) {
@@ -216,13 +247,14 @@ public class ScanFragment extends BaseScanFragment {
                         frameMat.release();
                         debug.end("生成预览缩略图");
                         // dismiss loading 并且执行动画从全屏到右下角
+                        scanInfoView.clear();
                         thumbnailPreviewAnimation(bitmap, scanInfo.getRotateAngle());
                         debug.start("保存图片");
                     }
 
                     @Override
                     public void onImageSaved(ScanInfo scanInfo) {
-                        scanEditInterface.add(scanInfo);
+                        scanDataManager.add(scanInfo);
                         debug.end("保存图片");
                         showThumbnail();
                     }
@@ -243,13 +275,13 @@ public class ScanFragment extends BaseScanFragment {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                final int scanSize = scanEditInterface.getScanInfoSize();
+                final int scanSize = scanDataManager.getScanInfoSize();
                 setCachedNumber(scanSize);
                 if (scanSize <= 0) {
                     return;
                 }
 
-                final ScanInfo scanInfo = scanEditInterface.getScanInfo(scanSize - 1);
+                final ScanInfo scanInfo = scanDataManager.getScanInfo(scanSize - 1);
                 final Size originSize = scanInfo.getOriginSize();
                 // 变换后的size
                 Size perSize;
@@ -278,9 +310,7 @@ public class ScanFragment extends BaseScanFragment {
         });
     }
 
-    private SoftReference<Bitmap> cachedPreviewBitmap;
-
-    private synchronized void thumbnailPreviewAnimation(final Bitmap bitmap, final ScanInfo.Angle angle) {
+    private void thumbnailPreviewAnimation(final Bitmap bitmap, final ScanInfo.Angle angle) {
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -334,7 +364,10 @@ public class ScanFragment extends BaseScanFragment {
                             @Override
                             public void run() {
                                 cameraView.startPreviewDisplay();
-                                startSquareFind();
+                                synchronized (lockObject) {
+                                    isPictureTaking = false;
+                                    lockObject.notify();
+                                }
                             }
                         }, 100);
                     }
@@ -355,29 +388,35 @@ public class ScanFragment extends BaseScanFragment {
         });
     }
 
+    private void stopSquareFind() {
+        if (squareFindWorker != null) {
+            squareFindWorker.stopWork();
+            squareFindWorker = null;
+        }
+    }
+
     private void startSquareFind() {
         stopSquareFind();
-        new Thread(squareFindWorker = new SquareFindWorker(squareFindScale) {
+        new Thread(squareFindWorker = new SquareFindWorker(SQUARE_FIND_SCALE, lockObject) {
 
             @Override
-            public void startFindSquares() {
+            public boolean enableToFind() {
+                return scanDataManager.getScanInfoSize() < MAX_PAGE_NUM && !isPictureTaking;
             }
 
             @Override
             public Mat getFrameMat() {
-                return cameraView.getFrameMat(squareFindScale);
+                return cameraView.getFrameMat(SQUARE_FIND_SCALE);
             }
 
             @Override
             public void onPointsFind(Size squareContainerSize, List<PointD> points) {
                 PointInfo pointInfo = null;
-                if (squareContainerSize != null && points != null && !points.isEmpty()) {
+                if (enableToFind() && squareContainerSize != null && points != null && !points.isEmpty()) {
                     scanInfoView.setPoint(
                             CvUtils.rotatePoints(points, squareContainerSize.width, squareContainerSize.height, com.egeio.opencv.tools.Utils.getCameraOrientation(getContext())),
-                            squareFindScale / cameraView.getScaleRatio());
-                    synchronized (ScanFragment.this) {
-                        pointInfoArrayList.add(pointInfo = new PointInfo(points));
-                    }
+                            SQUARE_FIND_SCALE / cameraView.getScaleRatio());
+                    pointInfoArrayList.add(pointInfo = new PointInfo(points));
                 } else {
                     scanInfoView.clear();
                 }
@@ -393,79 +432,58 @@ public class ScanFragment extends BaseScanFragment {
         }).start();
     }
 
+    @MainThread
     private void checkAndAutoTakePhoto(PointInfo latestPointInfo) {
-        synchronized (ScanFragment.this) {
-            int matchCount = 0;
-            if (latestPointInfo != null) {
-                final int size = pointInfoArrayList.size();
-                if (size > 2) {
-                    final long currentTimeMillis = System.currentTimeMillis();
-                    double currentInfoArea = Imgproc.contourArea(CvUtils.pointToMat(latestPointInfo.getPoints()));
-                    for (int i = size - 1; i >= 0; i--) {
-                        PointInfo pointInfo = pointInfoArrayList.get(i);
-                        final long timeDis = currentTimeMillis - pointInfo.getTime();
-                        if (timeDis < 0 || timeDis > 500) {
-                            if (latestPointInfo != pointInfo) {
-                                final double contourArea = Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints()));
-                                if (Math.abs((contourArea - currentInfoArea) / currentInfoArea) < 0.01d) {
-                                    matchCount++;
-                                } else {
-                                    break;
-                                }
+        int matchCount = 0;
+        int notMatchCount = 0;
+        if (latestPointInfo != null) {
+            final int size = pointInfoArrayList.size();
+            if (size > 2) {
+                final long currentTimeMillis = System.currentTimeMillis();
+                double currentInfoArea = Imgproc.contourArea(CvUtils.pointToMat(latestPointInfo.getPoints()));
+                for (int i = size - 1; i >= 0; i--) {
+                    PointInfo pointInfo = pointInfoArrayList.get(i);
+                    final long timeDis = currentTimeMillis - pointInfo.getTime();
+                    if (timeDis < 0 || timeDis > 500) {
+                        if (latestPointInfo != pointInfo) {
+                            final double contourArea = Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints()));
+                            if (Math.abs((contourArea - currentInfoArea) / currentInfoArea) < 0.015d) {
+                                matchCount++;
+                            } else {
+                                notMatchCount++;
+                            }
+                            if (notMatchCount >= 2) {
+                                break;
                             }
                         }
                     }
                 }
             }
-            if (matchCount >= 5) {
-                if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                    loadingInfoHolder.showInfo(R.drawable.ic_file, "请勿移动，正在扫描...");
-                    handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1500);
-                }
-            } else if (matchCount <= 0) {
-                handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
+        }
+        if (matchCount >= 5) {
+            if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
+                loadingInfoHolder.showInfo(R.drawable.ic_file, "请勿移动，正在扫描...");
+                handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1100);
+            }
+        } else if (matchCount <= 0) {
+            handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
+            loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
+        } else {
+            if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
                 loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
-            } else {
-                if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                    loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
-                }
             }
         }
     }
 
-    /**
-     * 找到往前推最合适的point info
-     *
-     * @return
-     */
-    private PointInfo findBestPointInfo() {
-        if (pointInfoArrayList.isEmpty()) {
-            return null;
-        }
-
-        final long currentTimeMillis = System.currentTimeMillis();
-        PointInfo pointInfoLargest = null;
-        for (PointInfo pointInfo : pointInfoArrayList) {
-            final long timeDis = currentTimeMillis - pointInfo.getTime();
-            if (timeDis < 0 || timeDis > 500) {
-                continue;
+    @Override
+    public void update(Observable o, Object arg) {
+        final int scanInfoSize = scanDataManager.getScanInfoSize();
+        if (scanInfoSize >= MAX_PAGE_NUM) {
+            handler.sendEmptyMessage(MSG_SHOW_MAX_PAGE_TIP);
+        } else {
+            synchronized (lockObject) {
+                lockObject.notify();
             }
-            if (pointInfoLargest == null) {
-                pointInfoLargest = pointInfo;
-            } else {
-                if (Imgproc.contourArea(CvUtils.pointToMat(pointInfo.getPoints())) >=
-                        Imgproc.contourArea(CvUtils.pointToMat(pointInfoLargest.getPoints()))) {
-                    pointInfoLargest = pointInfo;
-                }
-            }
-        }
-        return pointInfoLargest;
-    }
-
-    private void stopSquareFind() {
-        if (squareFindWorker != null) {
-            squareFindWorker.stopWork();
-            squareFindWorker = null;
         }
     }
 }

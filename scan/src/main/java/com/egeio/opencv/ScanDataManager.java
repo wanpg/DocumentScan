@@ -1,55 +1,48 @@
 package com.egeio.opencv;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import com.egeio.opencv.model.ScanInfo;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Observable;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by wangjinpeng on 2017/10/11.
  */
 
-public class ScanDataManager implements Parcelable {
+public class ScanDataManager extends Observable {
 
-    private final ArrayList<ScanInfo> scanInfoArrayList;
+    private final CopyOnWriteArrayList<ScanInfo> scanInfoArrayList;
 
     public ScanDataManager() {
-        scanInfoArrayList = new ArrayList<>();
+        scanInfoArrayList = new CopyOnWriteArrayList<>();
     }
 
-    protected ScanDataManager(Parcel in) {
-        scanInfoArrayList = in.createTypedArrayList(ScanInfo.CREATOR);
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeTypedList(scanInfoArrayList);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    public static final Creator<ScanDataManager> CREATOR = new Creator<ScanDataManager>() {
-        @Override
-        public ScanDataManager createFromParcel(Parcel in) {
-            return new ScanDataManager(in);
-        }
-
-        @Override
-        public ScanDataManager[] newArray(int size) {
-            return new ScanDataManager[size];
-        }
-    };
-
-    public void addScanInfo(ScanInfo scanInfo) {
-        scanInfoArrayList.add(scanInfo);
-    }
-
-    public ArrayList<ScanInfo> getScanInfoArrayList() {
+    public List<ScanInfo> getAll() {
         return scanInfoArrayList;
+    }
+
+    public ScanInfo getScanInfo(int index) {
+        return scanInfoArrayList.get(index);
+    }
+
+    public int indexOfScanInfo(ScanInfo info) {
+        return scanInfoArrayList.indexOf(info);
+    }
+
+    public int getScanInfoSize() {
+        return scanInfoArrayList.size();
+    }
+
+    public void remove(int index) {
+        scanInfoArrayList.remove(index);
+        setChanged();
+        notifyObservers();
+    }
+
+    public void add(ScanInfo scanInfo) {
+        scanInfoArrayList.add(scanInfo);
+        setChanged();
+        notifyObservers();
     }
 }

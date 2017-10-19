@@ -58,3 +58,7 @@ freeline_project_description.json
 obj/
 native/
 openCVLibrary330/src/main/libs/
+
+
+maven.properties
+repo/

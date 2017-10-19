@@ -1,17 +1,15 @@
 package com.egeio.opencv.tools;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
-import android.os.Build;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Surface;
-import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 
+import com.egeio.opencv.DocumentScan;
 import com.egeio.opencv.model.PointD;
 
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
@@ -70,16 +68,62 @@ public class Utils {
         return suffix;
     }
 
-    public static String getPdfSavePath(Context context, String name) {
-        return context.getExternalCacheDir() + File.separator + "pdf" + File.separator + name;
+    public static String getPdfFilePath(Context context, String name) {
+        return getCachePath(context, "pdf", name);
     }
 
-    public static String getSaveFolder(Context context) {
-        return context.getExternalCacheDir() + File.separator + "photo";
+    public static String getPictureFolder(Context context) {
+        return getCachePath(context, "picture");
     }
 
-    public static String getSavePath(Context context) {
-        return getSaveFolder(context) + File.separator + "IMG_" + System.currentTimeMillis() + ".png";
+    public static String getPictureFilePath(Context context) {
+        return getPictureFolder(context) + File.separator + "IMG_" + System.currentTimeMillis() + ".png";
+    }
+
+    private static String getCachePath(Context context, String... pathNames) {
+        String cacheFolder;
+        if (TextUtils.isEmpty(DocumentScan.cacheFolderPath)) {
+            cacheFolder = DocumentScan.cacheFolderPath;
+        } else {
+            cacheFolder = context.getExternalCacheDir().getAbsolutePath();
+        }
+        if (cacheFolder.endsWith(File.separator)) {
+            cacheFolder = cacheFolder.substring(0, cacheFolder.length() - 1);
+        }
+        StringBuilder stringBuilder = new StringBuilder(cacheFolder);
+        if (pathNames != null) {
+            for (String name : pathNames) {
+                stringBuilder.append(File.separator);
+                stringBuilder.append(name);
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+    /**
+     * 清空文件夹，如果存在的话
+     *
+     * @param folderPath
+     */
+    public static void clearFolder(String folderPath) {
+        clearFolder(new File(folderPath));
+    }
+
+    /**
+     * 清空文件夹，如果存在的话
+     *
+     * @param folder
+     */
+    public static void clearFolder(File folder) {
+        if (folder != null && folder.exists() && folder.isDirectory()) {
+            File[] files = folder.listFiles();
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    clearFolder(file);
+                }
+                file.delete();
+            }
+        }
     }
 
     public static void recycle(Bitmap bitmap) {
@@ -90,45 +134,6 @@ public class Utils {
             } finally {
                 bitmap = null;
             }
-        }
-    }
-
-    public static void setFullScreen(Activity activity) {
-        activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN); // 隐藏android系统的状态栏
-    }
-
-    public static void removeFullScreen(Activity activity) {
-        activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    }
-
-    // This snippet hides the system bars.
-    public static void hideSystemUI(Activity activity) {
-        // Set the IMMERSIVE flag.
-        // Set the content to appear under the system bars so that the content
-        // doesn't resize when the system bars hide and show.
-        View decorView = activity.getWindow().getDecorView();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            );
-        }
-    }
-
-    // This snippet shows the system bars. It does this by removing all the flags
-    // except for the ones that make the content appear under the system bars.
-    public static void showSystemUI(Activity activity) {
-        Window window = activity.getWindow();
-        View decorView = window.getDecorView();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            /*| View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN*/);
         }
     }
 
@@ -278,32 +283,6 @@ public class Utils {
     }
 
     /**
-     * 清空文件夹，如果存在的话
-     *
-     * @param folderPath
-     */
-    public static void clearFolder(String folderPath) {
-        clearFolder(new File(folderPath));
-    }
-
-    /**
-     * 清空文件夹，如果存在的话
-     *
-     * @param folder
-     */
-    public static void clearFolder(File folder) {
-        if (folder != null && folder.exists() && folder.isDirectory()) {
-            File[] files = folder.listFiles();
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    clearFolder(file);
-                }
-                file.delete();
-            }
-        }
-    }
-
-    /**
      * 计算两个点的距离
      *
      * @param p1
@@ -392,7 +371,7 @@ public class Utils {
         return angle;
     }
 
-    public static Mat warpPerspective(Mat src, List<Point> startCoords) {
+    public static Mat warpPerspective(Mat src, List<Point> startCoords) throws Exception {
         if (startCoords.size() != 4) return null;
 
         sortPoints(startCoords);

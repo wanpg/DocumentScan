@@ -54,3 +54,5 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 }
+
+apply from: 'maven.gradle'
