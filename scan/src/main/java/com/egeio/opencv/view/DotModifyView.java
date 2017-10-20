@@ -25,7 +25,10 @@ import com.egeio.scan.R;
 
 import org.apache.commons.math3.geometry.euclidean.twod.Line;
 import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
+import org.opencv.core.Mat;
 import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
+import org.opencv.utils.Converters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -299,6 +302,7 @@ public class DotModifyView extends View {
             return false;
         }
 
+        boolean isConvex;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             path.reset();
             path.moveTo((float) pointDList.get(0).x, (float) pointDList.get(0).y);
@@ -306,12 +310,13 @@ public class DotModifyView extends View {
             path.lineTo((float) pointDList.get(2).x, (float) pointDList.get(2).y);
             path.lineTo((float) pointDList.get(3).x, (float) pointDList.get(3).y);
             path.close();
-            return path.isConvex();
+            isConvex = path.isConvex();
+        } else {
+            final Mat mat = Converters.vector_Point_to_Mat(CvUtils.pointD2point(pointDList));
+            isConvex = Imgproc.isContourConvex(mat);
+            mat.release();
         }
-
-        boolean intersectant = isSegmentIntersectant(pointDList.get(0), pointDList.get(1), pointDList.get(2), pointDList.get(3))
-                || isSegmentIntersectant(pointDList.get(0), pointDList.get(3), pointDList.get(1), pointDList.get(2));
-        return !intersectant;
+        return isConvex;
     }
 
     /**
