@@ -23,7 +23,7 @@ allprojects {
 
 ext {
     GROUP = 'com.egeio'
-    VERSION = '0.0.3-SNAPSHOT'
+    VERSION = '0.0.4-SNAPSHOT'
 
     TEST_REPO = '../repo'
 
@@ -35,7 +35,7 @@ ext {
     USER_NAME = properties.getProperty("USER_NAME")
     PASSWORD = properties.getProperty("PASSWORD")
 
-    DEBUG = true
+    DEBUG = false
 }
 
 task clean(type: Delete) {

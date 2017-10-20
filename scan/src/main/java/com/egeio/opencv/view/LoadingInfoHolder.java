@@ -1,6 +1,8 @@
 package com.egeio.opencv.view;
 
 import android.animation.ObjectAnimator;
+import android.graphics.drawable.Drawable;
+import android.support.graphics.drawable.AnimatedVectorDrawableCompat;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -28,6 +30,12 @@ public class LoadingInfoHolder {
     public void showInfo(final int drawableRes, final String info) {
         areaLoading.setVisibility(View.VISIBLE);
         imageInfo.setImageResource(drawableRes);
+        textInfo.setText(info);
+    }
+
+    public void showInfo(Drawable drawable, String info){
+        areaLoading.setVisibility(View.VISIBLE);
+        imageInfo.setImageDrawable(drawable);
         textInfo.setText(info);
     }
 

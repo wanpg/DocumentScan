@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_anim_over">
+
+    <target
+        android:name="circle"
+        android:animation="@animator/anim_circle_loading" />
+
+    <target
+        android:name="true"
+        android:animation="@animator/anim_true_gone" />
+
+    <target
+        android:name="true"
+        android:animation="@animator/anim_true_loading" />
+
+</animated-vector>

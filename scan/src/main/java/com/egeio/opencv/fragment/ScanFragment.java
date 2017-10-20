@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.MainThread;
 import android.support.annotation.Nullable;
+import android.support.graphics.drawable.AnimatedVectorDrawableCompat;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -107,6 +108,16 @@ public class ScanFragment extends BaseScanFragment implements Observer {
         super.onAttach(context);
         scanDataInterface = (ScanDataInterface) getActivity();
         scanDataManager = scanDataInterface.getScanDataManager();
+    }
+
+    AnimatedVectorDrawableCompat autoShotDrawable;
+    AnimatedVectorDrawableCompat fileLoadingDrawable;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        autoShotDrawable = AnimatedVectorDrawableCompat.create(getContext(), R.drawable.anim_loading_over);
+        fileLoadingDrawable = AnimatedVectorDrawableCompat.create(getContext(), R.drawable.anim_file_loading);
     }
 
     @Nullable
@@ -460,17 +471,26 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                 }
             }
         }
+        synchronized (lockObject) {
+            if (isPictureTaking) {
+                return;
+            }
+        }
         if (matchCount >= 5) {
             if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                loadingInfoHolder.showInfo(R.drawable.ic_file, "请勿移动，正在扫描...");
-                handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1100);
+                autoShotDrawable.stop();
+                loadingInfoHolder.showInfo(autoShotDrawable, "请勿移动，正在扫描...");
+                autoShotDrawable.start();
+                handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1000);
             }
         } else if (matchCount <= 0) {
             handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
-            loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
+            loadingInfoHolder.showInfo(fileLoadingDrawable, "正在识别文档...");
+            fileLoadingDrawable.start();
         } else {
             if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                loadingInfoHolder.showInfo(R.drawable.ic_file, "正在识别文档...");
+                loadingInfoHolder.showInfo(fileLoadingDrawable, "正在识别文档...");
+                fileLoadingDrawable.start();
             }
         }
     }
