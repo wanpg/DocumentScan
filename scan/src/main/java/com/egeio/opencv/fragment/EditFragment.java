@@ -46,8 +46,6 @@ public class EditFragment extends BaseScanFragment {
 
     private int currentIndex;
 
-    private LoadingInfoHolder loadingInfoHolder;
-
     private FragmentPagerAdapter pagerAdapter;
 
     private ScanDataInterface scanDataInterface;
@@ -82,7 +80,6 @@ public class EditFragment extends BaseScanFragment {
     }
 
     private void initView() {
-        loadingInfoHolder = new LoadingInfoHolder(mContainer.findViewById(R.id.area_info));
         viewPager = mContainer.findViewById(R.id.view_pager);
         areaCrop = mContainer.findViewById(R.id.area_crop);
         areaOptimize = mContainer.findViewById(R.id.area_optimize);
@@ -220,7 +217,6 @@ public class EditFragment extends BaseScanFragment {
         });
         viewPager.setCurrentItem(currentIndex);
         changeOptimizeButton(currentIndex);
-        loadingInfoHolder.hideInfo();
     }
 
     private void changeOptimizeButton(int position) {
@@ -237,14 +233,14 @@ public class EditFragment extends BaseScanFragment {
     }
 
     void generatePdf() {
-        loadingInfoHolder.showLoading("正在生成pdf");
+        scanDataInterface.showLoading(true, "正在生成PDF");
         new Thread(new GeneratePdfWorker(getContext(), scanDataManager.getAll()) {
             @Override
             public void onPdfGenerated(final String savePath) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        loadingInfoHolder.hideInfo();
+                        scanDataInterface.showLoading(false, null);
                         scanDataInterface.onPdfGenerated(savePath);
                     }
                 });

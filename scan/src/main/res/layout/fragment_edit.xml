@@ -14,6 +14,7 @@
 
         <ImageView
             android:id="@+id/view_back"
+            style="@style/ActionBar.Operate"
             android:layout_width="@dimen/action_bar_height"
             android:layout_height="@dimen/action_bar_height"
             android:scaleType="center"
@@ -31,16 +32,14 @@
 
         <TextView
             android:id="@+id/text_next"
+            style="@style/ActionBar.Operate.Text"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
-            android:gravity="center"
             android:paddingLeft="15dp"
             android:paddingRight="15dp"
-            android:text="下一步"
-            android:textColor="#747b93"
-            android:textSize="16sp" />
+            android:text="下一步" />
     </RelativeLayout>
 
     <LinearLayout
@@ -53,13 +52,8 @@
 
         <LinearLayout
             android:id="@+id/area_crop"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingBottom="18dp"
-            android:paddingTop="15dp">
+
+            style="@style/Button.Operate_Image">
 
             <ImageView
                 android:layout_width="30dp"
@@ -77,13 +71,7 @@
 
         <LinearLayout
             android:id="@+id/area_optimize"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingBottom="18dp"
-            android:paddingTop="15dp">
+            style="@style/Button.Operate_Image">
 
             <ImageView
                 android:id="@+id/image_optimize"
@@ -103,13 +91,7 @@
 
         <LinearLayout
             android:id="@+id/area_rotate"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingBottom="18dp"
-            android:paddingTop="15dp">
+            style="@style/Button.Operate_Image">
 
             <ImageView
                 android:layout_width="30dp"
@@ -127,13 +109,7 @@
 
         <LinearLayout
             android:id="@+id/area_delete"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingBottom="18dp"
-            android:paddingTop="15dp">
+            style="@style/Button.Operate_Image">
 
             <ImageView
                 android:layout_width="30dp"
@@ -156,10 +132,4 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/area_operate"
         android:layout_below="@+id/area_title" />
-
-    <include
-        layout="@layout/layout_loading"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true" />
 </RelativeLayout>

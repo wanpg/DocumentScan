@@ -31,15 +31,17 @@ public class SquaresTracker {
 
     public List<List<Point>> findLargestSquares(Mat imageSrc, float scale) {
         // 处理image
-        // 黑白
-        Mat grayMat = new Mat();
-        Imgproc.cvtColor(imageSrc, grayMat, Imgproc.COLOR_BGR2GRAY);
         // 模糊
         Mat bluredMat = new Mat();
-        Imgproc.GaussianBlur(grayMat, bluredMat, new Size(5, 5), 0);
+        Imgproc.GaussianBlur(imageSrc, bluredMat, new Size(5, 5), 0);
+
+        // 黑白
+        Mat grayMat = new Mat();
+        Imgproc.cvtColor(bluredMat, grayMat, Imgproc.COLOR_BGR2GRAY);
+
         // canny
         Mat cannyMat = new Mat();
-        Imgproc.Canny(bluredMat, cannyMat, thresh, thresh * 2, 5, false);
+        Imgproc.Canny(grayMat, cannyMat, thresh, thresh * 2, 5, false);
         // threshold
         // CV_THRESH_OTSU = 8
         Mat thresholdMat = new Mat();

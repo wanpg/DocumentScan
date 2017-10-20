@@ -2,8 +2,6 @@ package com.egeio.opencv;
 
 import com.egeio.opencv.model.ScanInfo;
 
-import java.util.List;
-
 /**
  * Created by wangjinpeng on 2017/10/16.
  */
@@ -20,4 +18,11 @@ public interface ScanDataInterface {
 
     ScanDataManager getScanDataManager();
 
+    /**
+     * 显示或者隐藏loading
+     *
+     * @param shown
+     * @param msg   只在 shown == true 时有用
+     */
+    void showLoading(boolean shown, String msg);
 }

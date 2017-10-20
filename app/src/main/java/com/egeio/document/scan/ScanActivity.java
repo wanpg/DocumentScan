@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Window;
 import android.webkit.MimeTypeMap;
@@ -96,6 +97,23 @@ public class ScanActivity extends AppCompatActivity implements ScanDataInterface
     @Override
     public ScanDataManager getScanDataManager() {
         return scanDataManager;
+    }
+
+    AlertDialog alertDialog;
+
+    @Override
+    public void showLoading(boolean shown, String msg) {
+        if (alertDialog != null) {
+            alertDialog.dismiss();
+        }
+        alertDialog = null;
+        if (shown) {
+            alertDialog = new AlertDialog.Builder(this)
+                    .setMessage(msg)
+                    .setCancelable(false)
+                    .create();
+            alertDialog.show();
+        }
     }
 
     @Override

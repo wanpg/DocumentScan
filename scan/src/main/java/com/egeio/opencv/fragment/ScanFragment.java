@@ -116,7 +116,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        autoShotDrawable = AnimatedVectorDrawableCompat.create(getContext(), R.drawable.anim_loading_over);
+        autoShotDrawable = AnimatedVectorDrawableCompat.create(getContext(), R.drawable.anim_loading_success);
         fileLoadingDrawable = AnimatedVectorDrawableCompat.create(getContext(), R.drawable.anim_file_loading);
     }
 

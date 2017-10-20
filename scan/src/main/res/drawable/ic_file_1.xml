@@ -6,30 +6,30 @@
 
     <path
         android:pathData="M 86,21 l 0,982 l 552,0 l 300,-286 L938,21 L Z"
-        android:strokeColor="#bfbfbf"
+        android:strokeColor="#ffffff"
         android:strokeWidth="40" />
 
     <path
         android:pathData="M 636,1000 l 0,-269 l 285,0"
-        android:strokeColor="#bfbfbf"
+        android:strokeColor="#ffffff"
         android:strokeWidth="40" />
 
     <path
         android:name="line_1"
         android:pathData="M 276,276 l 470,0 "
-        android:strokeColor="#bfbfbf"
+        android:strokeColor="#ffffff"
         android:strokeWidth="40" />
 
     <path
         android:name="line_2"
         android:pathData="M 276,447 l 350,0 "
-        android:strokeColor="#bfbfbf"
+        android:strokeColor="#ffffff"
         android:strokeWidth="40" />
 
     <path
         android:name="line_3"
         android:pathData="M 276,618 l 212,0 "
-        android:strokeColor="#bfbfbf"
+        android:strokeColor="#ffffff"
         android:strokeWidth="40" />
 
 </vector>
