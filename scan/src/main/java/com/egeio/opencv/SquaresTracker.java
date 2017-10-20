@@ -1,7 +1,5 @@
 package com.egeio.opencv;
 
-import com.egeio.opencv.tools.Utils;
-
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -10,8 +8,11 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.utils.Converters;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +20,19 @@ public class SquaresTracker {
 
     private static final String TAG = SquaresTracker.class.getSimpleName();
 
-    final int thresh = 10, N = 2;
+    private void saveMat(String name, Mat mat) {
+        if (true) {
+            return;
+        }
+        final String folder = DocumentScan.cacheFolderPath + File.separator + System.currentTimeMillis() + File.separator;
+        final File file = new File(folder);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        Imgcodecs.imwrite(folder + name, mat);
+    }
+
+    final int thresh = 10, N = 3;
 
     double angle(Point pt1, Point pt2, Point pt0) {
         double dx1 = pt1.x - pt0.x;
@@ -32,32 +45,69 @@ public class SquaresTracker {
     public List<List<Point>> findLargestSquares(Mat imageSrc, float scale) {
         // 处理image
         // 模糊
+        saveMat("1_src.png", imageSrc);
+
         Mat bluredMat = new Mat();
         Imgproc.GaussianBlur(imageSrc, bluredMat, new Size(5, 5), 0);
+        saveMat("2_bluredMat.png", bluredMat);
 
         // 黑白
         Mat grayMat = new Mat();
         Imgproc.cvtColor(bluredMat, grayMat, Imgproc.COLOR_BGR2GRAY);
+        saveMat("3_grayMat.png", grayMat);
 
         // canny
         Mat cannyMat = new Mat();
-        Imgproc.Canny(grayMat, cannyMat, thresh, thresh * 2, 5, false);
+        Imgproc.Canny(grayMat, cannyMat, thresh, thresh * 2, 7, false);
+        saveMat("4_cannyMat1.png", cannyMat);
         // threshold
         // CV_THRESH_OTSU = 8
-        Mat thresholdMat = new Mat();
-        Imgproc.threshold(cannyMat, thresholdMat, 0, 255, 8/*CV_THRESH_BINARY*/);
+//        Mat thresholdMat = new Mat();
+//        Imgproc.threshold(cannyMat, thresholdMat, 0, 255, 8/*CV_THRESH_BINARY*/);
+//        saveMat("5_thresholdMat.png", thresholdMat);
 
-        return findContours(thresholdMat, scale);
+        return findContours(cannyMat, scale);
+    }
+
+    public List<List<Point>> findLargestSquares1(Mat imageSrc, float scale) {
+        saveMat("1_src.png", imageSrc);
+        // 处理image
+        // 模糊
+        Mat bluredMat = new Mat();
+        Imgproc.GaussianBlur(imageSrc, bluredMat, new Size(5, 5), 0);
+        saveMat("2_bluredMat.png", bluredMat);
+
+        // 黑白
+        Mat grayMat = new Mat();
+        Imgproc.cvtColor(bluredMat, grayMat, Imgproc.COLOR_BGR2GRAY);
+        saveMat("3_grayMat.png", grayMat);
+
+        // Canny
+        Mat cannyMat = new Mat();
+        List<List<Point>> squares = new ArrayList<>();
+        // try several threshold levels
+        for (int l = 0; l < 1; l++) {
+            // hack: use Canny instead of zero threshold level.
+            // Canny helps to catch squares with gradient shading
+            // apply Canny. Take the upper threshold from slider
+            // and set the lower to 0 (which forces edges merging)
+            Imgproc.Canny(grayMat, cannyMat, thresh, thresh * 4, 3, false);
+            // dilate canny output to remove potential
+            // holes between edge segments
+            Imgproc.dilate(cannyMat, cannyMat, new Mat(), new Point(-1, -1), 1);
+
+            saveMat((4 + l) + "_cannyMat.png", cannyMat);
+            squares.addAll(findContours(cannyMat, scale));
+        }
+        return squares;
     }
 
     // returns sequence of squares detected on the image.
     // the sequence is stored in the specified memory storage
-    public void findSquares(Mat imageCome, List<List<Point>> squares, float scale) {
-
-//        Mat pyr = new Mat();
-//        Mat timg = imageCome.clone();
-        Mat timg = new Mat();
-        Imgproc.GaussianBlur(imageCome, timg, new Size(5, 5), 0);
+    public List<List<Point>> findLargestSquares2(Mat imageCome, float scale) {
+        List<List<Point>> squares = new ArrayList<>();
+        Mat bluredMat = new Mat();
+        Imgproc.GaussianBlur(imageCome, bluredMat, new Size(5, 5), 0);
         Mat gray0 = new Mat(imageCome.rows(), imageCome.cols(), CvType.CV_8U);
         Mat gray = new Mat();
 
@@ -70,7 +120,7 @@ public class SquaresTracker {
             int ch[] = {c, 0};
 
             List<Mat> timgList = new ArrayList<>();
-            timgList.add(timg);
+            timgList.add(bluredMat);
             List<Mat> gray0List = new ArrayList<>();
             gray0List.add(gray0);
             MatOfInt matOfInt = new MatOfInt(ch);
@@ -98,8 +148,8 @@ public class SquaresTracker {
 
         gray.release();
         gray0.release();
-        timg.release();
-//        pyr.release();
+        bluredMat.release();
+        return squares;
     }
 
 
@@ -108,21 +158,23 @@ public class SquaresTracker {
 
 
         List<MatOfPoint> contours = new ArrayList<>();
-        // find contours and store them all as a list
+        // 寻找边缘
         Imgproc.findContours(src, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        // test each contour
+        // 检测点
         for (MatOfPoint mat : contours) {
+            // 转换为双精度点
+            mat.convertTo(mat, CvType.CV_32FC2);
             // approximate contour with accuracy proportional
             // to the contour perimeter
+            // 多变形逼近
             MatOfPoint2f approx = new MatOfPoint2f();
-            MatOfPoint2f matOfPoint2f = Utils.copy2MatPoint2f(mat);
+
             Imgproc.approxPolyDP(
-                    matOfPoint2f,
+                    mat,
                     approx,
-                    Imgproc.arcLength(matOfPoint2f, true) * 0.02,
+                    Imgproc.arcLength(mat, true) * 0.02,
                     true);
-            matOfPoint2f.release();
 
             // square contours should have 4 vertices after approximation
             // relatively large area (to filter out noisy contours)
@@ -130,38 +182,52 @@ public class SquaresTracker {
             // Note: absolute value of an area is used because
             // area may be positive or negative - in accordance with the
             // contour orientation
-            MatOfPoint matOfPoint1 = null;
-            MatOfPoint matOfPoint2 = null;
-            List<Point> points = approx.toList();
+            List<Point> points = new ArrayList<>(approx.toList());
+            if (points.size() >= 4 &&
+                    Math.abs(Imgproc.contourArea(approx)) > 1024 * scale) {
+                final List<Point> pointList = selectPoints(points, 5);
+                if (pointList.size() == 4
+                        && Imgproc.isContourConvex(Converters.vector_Point_to_Mat(pointList))) {
+                    double maxCosine = 0;
+                    for (int j = 2; j < 5; j++) {
+                        // find the maximum cosine of the angle between joint edges
+                        double cosine = Math.abs(angle(points.get(j % 4), points.get(j - 2), points.get(j - 1)));
+                        maxCosine = Math.max(maxCosine, cosine);
+                    }
 
-            if (points != null
-                    &&
-                    points.size() == 4
-                    &&
-                    Math.abs(Imgproc.contourArea(matOfPoint1 = Utils.copy2MatPoint(approx))) > 1024 * scale
-                    &&
-                    Imgproc.isContourConvex(matOfPoint2 = Utils.copy2MatPoint(approx))) {
-                double maxCosine = 0;
-                for (int j = 2; j < 5; j++) {
-                    // find the maximum cosine of the angle between joint edges
-                    double cosine = Math.abs(angle(points.get(j % 4), points.get(j - 2), points.get(j - 1)));
-                    maxCosine = Math.max(maxCosine, cosine);
+                    if (maxCosine < 0.3)
+                        pointArrayList.add(points);
+
                 }
-
-                // if cosines of all angles are small
-                // (all angles are ~90 degree) then write quandrange
-                // vertices to resultant sequence
-                if (maxCosine < 0.3)
-                    pointArrayList.add(points);
             }
             approx.release();
-            if (matOfPoint1 != null) {
-                matOfPoint1.release();
-            }
-            if (matOfPoint2 != null) {
-                matOfPoint2.release();
-            }
         }
         return pointArrayList;
+    }
+
+    private List<Point> selectPoints(List<Point> pointList, int selectTimes) {
+        if (pointList.size() > 4) {
+            double arc = Imgproc.arcLength(Converters.vector_Point2f_to_Mat(pointList), true);
+            int index = 0;
+            while (index != pointList.size() - 1) {
+                if (pointList.size() == 4) {
+                    break;
+                }
+                final Point p = pointList.get(index);
+                if (index != 0) {
+                    Point lastP = pointList.get(index - 1);
+                    double pointLength = Math.sqrt(Math.pow(p.x - lastP.x, 2) + Math.pow((p.y - lastP.y), 2));
+                    if (pointLength < arc * 0.01 * selectTimes && pointList.size() > 4) {
+                        pointList.remove(index);
+                        continue;
+                    }
+                }
+                index++;
+            }
+            if (pointList.size() > 4) {
+                return selectPoints(pointList, selectTimes + 1);
+            }
+        }
+        return pointList;
     }
 }

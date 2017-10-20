@@ -6,6 +6,7 @@
 
     <com.egeio.opencv.view.CameraView
         android:id="@+id/camera_view"
+        android:keepScreenOn="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

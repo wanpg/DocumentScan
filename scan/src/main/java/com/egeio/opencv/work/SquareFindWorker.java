@@ -66,11 +66,13 @@ public abstract class SquareFindWorker extends Worker {
                     if (frameMat != null && !frameMat.empty()) {
                         debug.start("寻找多边形");
                         matList.clear();
-                        //                    squaresTracker.findSquares(frameMat, matList, defaultScale);
-                        matList.addAll(squaresTracker.findLargestSquares(frameMat, defaultScale));
+//                        matList.addAll(squaresTracker.findLargestSquares(frameMat, defaultScale));
+                        matList.addAll(squaresTracker.findLargestSquares1(frameMat, defaultScale));
+//                        squaresTracker.findLargestSquares2(frameMat, matList, defaultScale);
                         debug.end("寻找多边形");
                     }
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    e.printStackTrace();
                 } finally {
                     if (frameMat != null) {
                         frameMat.release();

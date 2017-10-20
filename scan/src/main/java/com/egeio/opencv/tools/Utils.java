@@ -80,7 +80,7 @@ public class Utils {
         return getPictureFolder(context) + File.separator + "IMG_" + System.currentTimeMillis() + ".png";
     }
 
-    private static String getCachePath(Context context, String... pathNames) {
+    public static String getCachePath(Context context, String... pathNames) {
         String cacheFolder;
         if (TextUtils.isEmpty(DocumentScan.cacheFolderPath)) {
             cacheFolder = DocumentScan.cacheFolderPath;

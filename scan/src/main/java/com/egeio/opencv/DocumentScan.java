@@ -16,7 +16,7 @@ public class DocumentScan {
     /**
      * 预览图按照这个比率缩小进行边框查找
      */
-    public static final float SQUARE_FIND_SCALE = 0.125f;
+    public static final float SQUARE_FIND_SCALE = 0.25f;
 
     public static String cacheFolderPath;
 

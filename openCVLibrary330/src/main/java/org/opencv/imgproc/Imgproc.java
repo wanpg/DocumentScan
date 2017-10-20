@@ -733,7 +733,7 @@ public class Imgproc {
     //
 
     //javadoc: isContourConvex(contour)
-    public static boolean isContourConvex(MatOfPoint contour)
+    public static boolean isContourConvex(Mat contour)
     {
         Mat contour_mat = contour;
         boolean retVal = isContourConvex_0(contour_mat.nativeObj);
@@ -747,10 +747,9 @@ public class Imgproc {
     //
 
     //javadoc: arcLength(curve, closed)
-    public static double arcLength(MatOfPoint2f curve, boolean closed)
+    public static double arcLength(Mat curve, boolean closed)
     {
-        Mat curve_mat = curve;
-        double retVal = arcLength_0(curve_mat.nativeObj, closed);
+        double retVal = arcLength_0(curve.nativeObj, closed);
         
         return retVal;
     }
@@ -1425,7 +1424,7 @@ public class Imgproc {
     //
 
     //javadoc: approxPolyDP(curve, approxCurve, epsilon, closed)
-    public static void approxPolyDP(MatOfPoint2f curve, MatOfPoint2f approxCurve, double epsilon, boolean closed)
+    public static void approxPolyDP(Mat curve, MatOfPoint2f approxCurve, double epsilon, boolean closed)
     {
         Mat curve_mat = curve;
         Mat approxCurve_mat = approxCurve;
