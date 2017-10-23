@@ -67,9 +67,9 @@ public class DotModifyFragment extends BaseScanFragment {
             dotModifyView = mContainer.findViewById(R.id.dot_modify);
             imagePreviewView = mContainer.findViewById(R.id.image_preview);
             dotZoomView = mContainer.findViewById(R.id.dot_zoom);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+            SysUtils.setStatysBarPadding(mContainer.findViewById(R.id.area_image));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 final int statusBarHeight = SysUtils.getStatusBarHeight(getContext());
-                mContainer.findViewById(R.id.area_image).setPadding(0, statusBarHeight, 0, 0);
                 dotZoomView.setPadding(
                         dotZoomView.getPaddingLeft(),
                         dotZoomView.getPaddingTop() + statusBarHeight,

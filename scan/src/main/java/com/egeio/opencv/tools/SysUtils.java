@@ -28,6 +28,12 @@ public class SysUtils {
         activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
+    public static void setStatysBarPadding(View view) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            view.setPadding(0, SysUtils.getStatusBarHeight(view.getContext()), 0, 0);
+        }
+    }
+
     /**
      * 设置小米手机状态栏字体图标颜色模式，需要MIUIV6以上
      *
@@ -101,52 +107,54 @@ public class SysUtils {
         // doesn't resize when the system bars hide and show.
         View decorView = activity.getWindow().getDecorView();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            );
+            int visible = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
+                visible = visible
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar;
+                ;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+                decorView.setSystemUiVisibility(visible);
         }
     }
 
-    // This snippet shows the system bars. It does this by removing all the flags
-    // except for the ones that make the content appear under the system bars.
+    // 这个方法处理显示的系统ui
+    // 设置全屏模式，状态栏设置为透明色
     public static void showSystemUI(Activity activity) {
         Window window = activity.getWindow();
         int visible = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // 设置系统layout全屏  并且  系统ui的图标显示（状态栏和系统图标）
             visible = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            // 移除原有的透明状态栏配置
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // 设置可以绘制系统bar背景
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        }
-        int statusColor = Color.TRANSPARENT;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // 6.0以上,设置背景颜色和状态栏文字颜色
-            // 如果背景是浅颜色，则设置状态栏为浅色主题，也就是文字是深色的
-            visible |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            if (Build.BRAND.equalsIgnoreCase("Xiaomi")) {
-                MIUISetStatusBarLightMode(window, true);
-            }
-            // FIXME: 2017/5/26 此处要处理魅族等国产手机
+            int statusColor = Color.TRANSPARENT;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                // 6.0以上,设置背景颜色和状态栏文字颜色
+                // 如果背景是浅颜色，则设置状态栏为浅色主题，也就是文字是深色的
+                visible |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                if (Build.BRAND.equalsIgnoreCase("Xiaomi")) {
+                    MIUISetStatusBarLightMode(window, true);
+                }
+                // FIXME: 2017/5/26 此处要处理魅族等国产手机
             /*else if (FlymeSetStatusBarLightMode(window, true)) {
 
             }*/
-        } else {
-            statusColor = Color.parseColor("#60000000");
-        }
-        window.getDecorView().setSystemUiVisibility(visible);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            } else {
+                statusColor = Color.parseColor("#60000000");
+            }
             window.setStatusBarColor(statusColor);
         }
+        window.getDecorView().setSystemUiVisibility(visible);
     }
 
     public static int getStatusBarHeight(Context context) {

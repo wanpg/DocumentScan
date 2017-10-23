@@ -64,9 +64,7 @@ public class EditFragment extends BaseScanFragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_edit, null);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT_WATCH) {
-                mContainer.setPadding(0, SysUtils.getStatusBarHeight(getContext()), 0, 0);
-            }
+            SysUtils.setStatysBarPadding(mContainer);
             initView();
         }
         return mContainer;
