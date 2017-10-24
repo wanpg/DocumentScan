@@ -11,7 +11,7 @@ public class DocumentScan {
     /**
      * 最多能拍照的数量
      */
-    public static final int MAX_PAGE_NUM = 10;
+    public static int MAX_PAGE_NUM = 10;
 
     /**
      * 预览图按照这个比率缩小进行边框查找
@@ -26,8 +26,20 @@ public class DocumentScan {
      * @param context
      */
     public static void init(Context context, String cacheFolderPath) {
+        init(context, cacheFolderPath, 10);
+    }
+
+    /**
+     * 初始化
+     *
+     * @param context
+     * @param cacheFolderPath 临时文件存储的目录
+     * @param maxPageNum      最大页数限制
+     */
+    public static void init(Context context, String cacheFolderPath, int maxPageNum) {
         OpenCVHelper.init();
         DocumentScan.cacheFolderPath = cacheFolderPath;
+        MAX_PAGE_NUM = maxPageNum;
     }
 
 }
