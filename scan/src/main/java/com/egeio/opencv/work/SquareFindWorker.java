@@ -21,6 +21,7 @@ public abstract class SquareFindWorker extends Worker {
 
     private Debug debug = new Debug(SquareFindWorker.class.getSimpleName());
     private SquaresTracker squaresTracker;
+    private long lastFindTime;
 
     public abstract boolean enableToFind();
 
@@ -28,14 +29,12 @@ public abstract class SquareFindWorker extends Worker {
 
     public abstract void onPointsFind(Size squareContainerSize, List<PointD> points);
 
-    private float defaultScale;
-
     private final Object lockObject;
 
-    public SquareFindWorker(float defaultScale, Object lockObject) {
-        this.defaultScale = defaultScale;
+    public SquareFindWorker(Object lockObject) {
         this.lockObject = lockObject;
         squaresTracker = new SquaresTracker();
+        lastFindTime = System.currentTimeMillis();
     }
 
     @Override
@@ -50,6 +49,16 @@ public abstract class SquareFindWorker extends Worker {
                     e.printStackTrace();
                 }
             }
+
+            long lastFindDis = System.currentTimeMillis() - lastFindTime;
+            if (lastFindDis < 100) {
+                try {
+                    Thread.sleep(100 - lastFindDis);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            lastFindTime = System.currentTimeMillis();
             try {
                 assertWorkStopped();
                 debug.clear();
@@ -67,7 +76,7 @@ public abstract class SquareFindWorker extends Worker {
                         debug.start("寻找多边形");
                         matList.clear();
 //                        matList.addAll(squaresTracker.findLargestSquares(frameMat, defaultScale));
-                        matList.addAll(squaresTracker.findLargestSquares1(frameMat, defaultScale));
+                        matList.addAll(squaresTracker.findLargestSquares1(frameMat));
 //                        squaresTracker.findLargestSquares2(frameMat, matList, defaultScale);
                         debug.end("寻找多边形");
                     }

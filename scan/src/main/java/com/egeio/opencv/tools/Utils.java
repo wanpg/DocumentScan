@@ -82,8 +82,8 @@ public class Utils {
 
     public static String getCachePath(Context context, String... pathNames) {
         String cacheFolder;
-        if (TextUtils.isEmpty(DocumentScan.cacheFolderPath)) {
-            cacheFolder = DocumentScan.cacheFolderPath;
+        if (TextUtils.isEmpty(DocumentScan.CACHE_FOLDER_PATH)) {
+            cacheFolder = DocumentScan.CACHE_FOLDER_PATH;
         } else {
             cacheFolder = context.getExternalCacheDir().getAbsolutePath();
         }

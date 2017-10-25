@@ -1,7 +1,7 @@
 package com.egeio.opencv.fragment;
 
-import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
@@ -11,12 +11,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.egeio.opencv.DocumentScan;
 import com.egeio.opencv.ScanDataInterface;
 import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.SysUtils;
 import com.egeio.opencv.view.FragmentPagerAdapter;
-import com.egeio.opencv.view.LoadingInfoHolder;
 import com.egeio.opencv.work.GeneratePdfWorker;
 import com.egeio.scan.R;
 
@@ -41,7 +41,8 @@ public class EditFragment extends BaseScanFragment {
     private View areaCrop, areaOptimize, areaRotate, areaDelete;
     private ImageView imageOptimize;
     private TextView textOptimize;
-    private View viewBack, viewNext;
+    private View viewBack;
+    private TextView viewNext;
     private TextView textTitle;
 
     private int currentIndex;
@@ -50,6 +51,8 @@ public class EditFragment extends BaseScanFragment {
 
     private ScanDataInterface scanDataInterface;
     private ScanDataManager scanDataManager;
+
+    private Handler handler = new Handler();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -88,6 +91,7 @@ public class EditFragment extends BaseScanFragment {
         viewBack = mContainer.findViewById(R.id.view_back);
         textTitle = mContainer.findViewById(R.id.text_title);
         viewNext = mContainer.findViewById(R.id.text_next);
+        viewNext.setText(getString(DocumentScan.EDIT_NEXT_TEXT_RES));
         areaCrop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -235,7 +239,7 @@ public class EditFragment extends BaseScanFragment {
         new Thread(new GeneratePdfWorker(getContext(), scanDataManager.getAll()) {
             @Override
             public void onPdfGenerated(final String savePath) {
-                getActivity().runOnUiThread(new Runnable() {
+                handler.post(new Runnable() {
                     @Override
                     public void run() {
                         scanDataInterface.showLoading(false, null);

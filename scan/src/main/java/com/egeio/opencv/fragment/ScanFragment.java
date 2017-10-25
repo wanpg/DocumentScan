@@ -304,6 +304,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                 final int thumbnailSize = getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
                 double scale = thumbnailSize / Math.max(perSize.width, perSize.height);
                 int tarSize = (int) (Math.max(originSize.width, originSize.height) * scale);
+                // FIXME: 2017/10/25 处理扫描尺寸
                 Glide.with(ScanFragment.this)
                         .load(scanInfo.getPath())
                         .asBitmap()
@@ -325,6 +326,9 @@ public class ScanFragment extends BaseScanFragment implements Observer {
         handler.post(new Runnable() {
             @Override
             public void run() {
+                if (isDetached() || !isAdded() || getActivity() == null || getActivity().isFinishing()) {
+                    return;
+                }
                 debug.start("动画设置");
                 cachedPreviewBitmap = new SoftReference<>(bitmap);
                 thumbnailPreview.setBitmap(cachedPreviewBitmap.get());
@@ -408,7 +412,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
 
     private void startSquareFind() {
         stopSquareFind();
-        new Thread(squareFindWorker = new SquareFindWorker(SQUARE_FIND_SCALE, lockObject) {
+        new Thread(squareFindWorker = new SquareFindWorker(lockObject) {
 
             @Override
             public boolean enableToFind() {
