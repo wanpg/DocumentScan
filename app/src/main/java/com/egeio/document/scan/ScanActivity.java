@@ -12,6 +12,7 @@ import android.view.Window;
 import android.webkit.MimeTypeMap;
 
 import com.egeio.opencv.DocumentScan;
+import com.egeio.opencv.ResReplacement;
 import com.egeio.opencv.ScanDataInterface;
 import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.fragment.BaseScanFragment;
@@ -32,7 +33,67 @@ public class ScanActivity extends AppCompatActivity implements ScanDataInterface
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE); // 隐藏应用程序的标题栏，即当前activity的label
-        DocumentScan.init(this, getExternalCacheDir().getAbsolutePath());
+        DocumentScan.init(this, getExternalCacheDir().getAbsolutePath(), 10, new ResReplacement() {
+            @Override
+            public int getCancel() {
+                return R.string.cancel;
+            }
+
+            @Override
+            public int getIdentifying() {
+                return R.string.identifying;
+            }
+
+            @Override
+            public int getScanning() {
+                return R.string.scanning;
+            }
+
+            @Override
+            public int getMaxPageTip() {
+                return R.string.max_page_tip;
+            }
+
+            @Override
+            public int getCrop() {
+                return R.string.crop;
+            }
+
+            @Override
+            public int getOptimize() {
+                return R.string.optimize;
+            }
+
+            @Override
+            public int getRestore() {
+                return R.string.restore;
+            }
+
+            @Override
+            public int getRotate() {
+                return R.string.rotate;
+            }
+
+            @Override
+            public int getDelete() {
+                return R.string.delete;
+            }
+
+            @Override
+            public int getComplete() {
+                return R.string.complete;
+            }
+
+            @Override
+            public int getEditOver() {
+                return R.string.edit_over;
+            }
+
+            @Override
+            public int getGenerating() {
+                return R.string.generating;
+            }
+        });
         if (savedInstanceState != null) {
             Utils.clearFolder(Utils.getPictureFolder(this));
         }

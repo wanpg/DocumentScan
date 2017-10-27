@@ -9,6 +9,7 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.egeio.opencv.ScanDataInterface;
 import com.egeio.opencv.ScanDataManager;
@@ -76,13 +77,17 @@ public class DotModifyFragment extends BaseScanFragment {
                         dotZoomView.getPaddingRight(),
                         dotZoomView.getPaddingBottom());
             }
-            mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
+            TextView textCancel = mContainer.findViewById(R.id.cancel);
+            textCancel.setText(scanDataManager.getCancel());
+            textCancel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     getActivity().onBackPressed();
                 }
             });
-            mContainer.findViewById(R.id.complete).setOnClickListener(new View.OnClickListener() {
+            TextView textComplete = mContainer.findViewById(R.id.complete);
+            textComplete.setText(scanDataManager.getComplete());
+            textComplete.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     final List<PointD> modifiedPoints = dotModifyView.getModifiedPoints();

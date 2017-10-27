@@ -28,7 +28,6 @@
         android:id="@+id/text_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="正在识别文档..."
         android:textColor="#ffffff"
         android:textSize="16sp" />
 </LinearLayout>

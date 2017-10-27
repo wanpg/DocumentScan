@@ -19,8 +19,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:paddingLeft="15dp"
-                android:paddingRight="15dp"
-                android:text="取消" />
+                android:paddingRight="15dp" />
 
             <TextView
                 android:id="@+id/complete"
@@ -30,16 +29,15 @@
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentRight="true"
                 android:paddingLeft="15dp"
-                android:paddingRight="15dp"
-                android:text="完成" />
+                android:paddingRight="15dp" />
         </RelativeLayout>
 
         <com.egeio.opencv.view.PreviewImageView
             android:id="@+id/image_preview"
-            android:background="@android:color/black"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="@dimen/action_bar_height" />
+            android:layout_marginTop="@dimen/action_bar_height"
+            android:background="@android:color/black" />
 
         <com.egeio.opencv.view.DotModifyView
             android:id="@+id/dot_modify"

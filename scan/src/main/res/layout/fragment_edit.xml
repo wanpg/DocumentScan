@@ -38,8 +38,7 @@
             android:layout_alignParentEnd="true"
             android:layout_alignParentRight="true"
             android:paddingLeft="15dp"
-            android:paddingRight="15dp"
-            android:text="下一步" />
+            android:paddingRight="15dp" />
     </RelativeLayout>
 
     <LinearLayout
@@ -61,10 +60,10 @@
                 app:srcCompat="@drawable/ic_cut_out" />
 
             <TextView
+                android:id="@+id/text_crop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="裁剪"
                 android:textColor="#9198b2"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -84,7 +83,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="优化"
                 android:textColor="#9198b2"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -99,10 +97,10 @@
                 app:srcCompat="@drawable/ic_rotating" />
 
             <TextView
+                android:id="@+id/text_rotate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="旋转"
                 android:textColor="#9198b2"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -117,10 +115,10 @@
                 app:srcCompat="@drawable/ic_delete" />
 
             <TextView
+                android:id="@+id/text_delete"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:text="删除"
                 android:textColor="#9198b2"
                 android:textSize="12sp" />
         </LinearLayout>

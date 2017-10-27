@@ -1,4 +1,15 @@
 <resources>
     <string name="app_name">scan</string>
-    <string name="next">下一步</string>
+    <string name="cancel">取消</string>
+    <string name="identifying">正在识别文档...</string>
+    <string name="scanning">请勿移动，正在扫描...</string>
+    <string name="max_page_tip">扫描数量已达上限</string>
+    <string name="crop">裁剪</string>
+    <string name="optimize">优化</string>
+    <string name="rotate">旋转</string>
+    <string name="delete">删除</string>
+    <string name="complete">完成</string>
+    <string name="edit_over">下一步</string>
+    <string name="restore">还原</string>
+    <string name="generating">正在生成文档</string>
 </resources>

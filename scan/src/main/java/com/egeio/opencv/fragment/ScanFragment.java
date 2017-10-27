@@ -94,7 +94,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                     takePhoto();
                     break;
                 case MSG_SHOW_MAX_PAGE_TIP:
-                    loadingInfoHolder.showInfo(R.drawable.ic_tips, "扫描数量已达上限");
+                    loadingInfoHolder.showInfo(R.drawable.ic_tips, getString(scanDataManager.getMaxPageTip()));
                     break;
             }
         }
@@ -133,7 +133,9 @@ public class ScanFragment extends BaseScanFragment implements Observer {
             txtNumber = mContainer.findViewById(R.id.text_num);
             viewArrow = mContainer.findViewById(R.id.view_arrow);
             loadingInfoHolder = new LoadingInfoHolder(mContainer.findViewById(R.id.area_info));
-            mContainer.findViewById(R.id.cancel).setOnClickListener(new View.OnClickListener() {
+            TextView textCancel = mContainer.findViewById(R.id.cancel);
+            textCancel.setText(scanDataManager.getCancel());
+            textCancel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     getActivity().onBackPressed();
@@ -483,17 +485,17 @@ public class ScanFragment extends BaseScanFragment implements Observer {
         if (matchCount >= 5) {
             if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
                 autoShotDrawable.stop();
-                loadingInfoHolder.showInfo(autoShotDrawable, "请勿移动，正在扫描...");
+                loadingInfoHolder.showInfo(autoShotDrawable, getString(scanDataManager.getScanning()));
                 autoShotDrawable.start();
                 handler.sendEmptyMessageDelayed(MSG_AUTO_TAKE_PHOTO, 1000);
             }
         } else if (matchCount <= 0) {
             handler.removeMessages(MSG_AUTO_TAKE_PHOTO);
-            loadingInfoHolder.showInfo(fileLoadingDrawable, "正在识别文档...");
+            loadingInfoHolder.showInfo(fileLoadingDrawable, getString(scanDataManager.getIdentifying()));
             fileLoadingDrawable.start();
         } else {
             if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
-                loadingInfoHolder.showInfo(fileLoadingDrawable, "正在识别文档...");
+                loadingInfoHolder.showInfo(fileLoadingDrawable, getString(scanDataManager.getIdentifying()));
                 fileLoadingDrawable.start();
             }
         }

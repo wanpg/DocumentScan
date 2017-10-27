@@ -6,9 +6,9 @@
 
     <com.egeio.opencv.view.CameraView
         android:id="@+id/camera_view"
-        android:keepScreenOn="true"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:keepScreenOn="true" />
 
     <com.egeio.opencv.view.ScanInfoView
         android:id="@+id/scan_info"
@@ -31,8 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
             android:gravity="center"
-            android:padding="25dp"
-            android:text="取消" />
+            android:padding="25dp" />
 
         <ImageView
             android:id="@+id/lens"
