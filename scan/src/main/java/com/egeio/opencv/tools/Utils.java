@@ -36,6 +36,8 @@ import java.util.List;
 
 public class Utils {
 
+    private static Debug debug = new Debug(Utils.class.getSimpleName());
+
     public static void createFile(String filePath) {
         File file = new File(filePath);
         final File parentFile = file.getParentFile();
@@ -77,7 +79,7 @@ public class Utils {
     }
 
     public static String getPictureFilePath(Context context) {
-        return getPictureFolder(context) + File.separator + "IMG_" + System.currentTimeMillis() + ".png";
+        return getPictureFolder(context) + File.separator + "IMG_" + System.currentTimeMillis() + ".jpg";
     }
 
     public static String getCachePath(Context context, String... pathNames) {
@@ -387,9 +389,10 @@ public class Utils {
         Mat result = Converters.vector_Point2d_to_Mat(resultCoords);
         start.convertTo(start, CvType.CV_32FC2);
         result.convertTo(result, CvType.CV_32FC2);
-
         Mat mat = new Mat(size, src.type());
+
         Mat perspective = Imgproc.getPerspectiveTransform(start, result);
+
         Imgproc.warpPerspective(src, mat, perspective, size);
         return mat;
     }

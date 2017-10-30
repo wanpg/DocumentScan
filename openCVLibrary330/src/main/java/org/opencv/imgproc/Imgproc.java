@@ -3505,6 +3505,6 @@ public static Size getTextSize(String text, int fontFace, double fontScale, int 
 
     // C++:  void watershed(Mat image, Mat& markers)
     private static native void watershed_0(long image_nativeObj, long markers_nativeObj);
-private static native double[] n_getTextSize(String text, int fontFace, double fontScale, int thickness, int[] baseLine);
+    private static native double[] n_getTextSize(String text, int fontFace, double fontScale, int thickness, int[] baseLine);
 
 }

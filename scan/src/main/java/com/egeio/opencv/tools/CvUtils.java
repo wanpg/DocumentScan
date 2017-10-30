@@ -5,6 +5,7 @@ import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Size;
@@ -76,15 +77,30 @@ public class CvUtils {
     }
 
     public static Mat formatFromScanInfo(Mat src, ScanInfo scanInfo) {
+        return formatFromScanInfo(src, scanInfo, null);
+    }
+
+    public static Mat formatFromScanInfo(Mat src, ScanInfo scanInfo, Debug debug) {
         Mat frameMat = src;
         // 旋转
 //        frameMat = rotate(frameMat, scanInfo);
 
+        if (debug != null) {
+            debug.start("透视变换，截取拉伸");
+        }
         // 透视变换，截取拉伸
         frameMat = warpPerspective(frameMat, scanInfo);
 
+        if (debug != null) {
+            debug.end("透视变换，截取拉伸");
+            debug.start("优化");
+        }
+
         // 优化
         frameMat = optimize(frameMat, scanInfo);
+        if (debug != null) {
+            debug.end("优化");
+        }
         return frameMat;
     }
 
@@ -165,7 +181,7 @@ public class CvUtils {
             // 亮度
             // 对比度
             Mat mat = new Mat();
-            src.convertTo(mat, -1, 1.1, 5);
+            src.convertTo(mat, CvType.CV_8UC1, 1.1, 5);
             //
             Mat gray = new Mat();
             Imgproc.cvtColor(mat, gray, Imgproc.COLOR_BGR2GRAY);
