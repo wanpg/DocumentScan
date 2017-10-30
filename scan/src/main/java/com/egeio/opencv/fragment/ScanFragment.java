@@ -482,6 +482,9 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                 return;
             }
         }
+        if (isDetached() || !isAdded()) {
+            return;
+        }
         if (matchCount >= 5) {
             if (!handler.hasMessages(MSG_AUTO_TAKE_PHOTO)) {
                 autoShotDrawable.stop();

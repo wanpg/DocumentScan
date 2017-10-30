@@ -162,7 +162,7 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
         float previewRatio = 1f * previewSize.width / previewSize.height;
         for (Camera.Size size : supportedPictureSizes) {
             float ratio = 1f * size.width / size.height;
-            if (Math.abs(previewRatio - ratio) < 0.01f) {
+            if (Math.abs(previewRatio - ratio) < 0.01f && Math.max(size.width, size.height) < 3000) {
                 return size;
             }
         }

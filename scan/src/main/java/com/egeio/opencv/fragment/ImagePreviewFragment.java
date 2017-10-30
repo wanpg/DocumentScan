@@ -152,7 +152,7 @@ public class ImagePreviewFragment extends BaseScanFragment {
                     debug.start("加载图片Bitmap");
                     BitmapFactory.Options options = new BitmapFactory.Options();
                     options.inPreferredConfig = Bitmap.Config.RGB_565;
-                    options.inSampleSize = Math.max(2, CvUtils.calculateInSampleSize((int) perspectiveSize.width, (int) perspectiveSize.height, imageViewMaxSide, imageViewMaxSide));
+                    options.inSampleSize = Math.max(1, CvUtils.calculateInSampleSize((int) perspectiveSize.width, (int) perspectiveSize.height, imageViewMaxSide, imageViewMaxSide));
                     Bitmap bitmapSrc = BitmapFactory.decodeFile(scanInfo.getPath(), options);
                     debug.end("加载图片Bitmap");
                     debug.d("bitmapSrc--size:[" + bitmapSrc.getWidth() + ", " + bitmapSrc.getHeight() + "]");
