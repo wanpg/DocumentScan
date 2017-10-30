@@ -142,8 +142,7 @@ public class DotModifyFragment extends BaseScanFragment {
                         // 绘制点
                         dotModifyView.setScanInfo(scanInfo);
                         // 缩放区域
-                        dotZoomView.setBitmap(cachedBitmap);
-                        dotZoomView.setScanInfo(scanInfo);
+                        dotZoomView.setScanInfoAndBitmap(scanInfo, cachedBitmap);
                     } catch (Exception e) {
                         if (e instanceof Worker.WorkStoppedException) {
                             // 此处回收无用的临时资源

@@ -20,11 +20,10 @@ import android.view.View;
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
+import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.tools.Utils;
 import com.egeio.scan.R;
 
-import org.apache.commons.math3.geometry.euclidean.twod.Line;
-import org.apache.commons.math3.geometry.euclidean.twod.Vector2D;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -64,6 +63,8 @@ public class DotModifyView extends View {
         init();
     }
 
+    private Debug debug = new Debug(DotModifyView.class.getSimpleName());
+
     private Paint pathPaint, dotPaint, maskPaint;
     private ScanInfo scanInfo;
     private boolean initialize = false;
@@ -71,6 +72,7 @@ public class DotModifyView extends View {
 
     private Path pointPath = new Path();
     private RectF maskRectF = new RectF();
+    private Path maskPath = new Path();
 
     private Path verifyPath = new Path();
     final PorterDuffXfermode xfermodeClear = new PorterDuffXfermode(PorterDuff.Mode.CLEAR);
@@ -123,6 +125,7 @@ public class DotModifyView extends View {
     public void setScanInfo(ScanInfo scanInfo) {
         rotatedPoints.clear();
         this.scanInfo = scanInfo;
+        calSeveralSize();
         if (scanInfo != null) {
             final Size originSize = scanInfo.getOriginSize();
             final int rotateAngleValue = scanInfo.getRotateAngle().getValue();
@@ -134,28 +137,35 @@ public class DotModifyView extends View {
         }
     }
 
+    int width, height;
+
+    private void calSeveralSize() {
+        final Size originSize = scanInfo.getOriginSize();
+        final int rotateAngle = scanInfo.getRotateAngle().getValue();
+        // point 旋转
+
+        width = getWidth() - getPaddingLeft() - getPaddingRight();
+        height = getHeight() - getPaddingTop() - getPaddingBottom();
+
+        double rotatedOriginWidth = rotateAngle == 90 || rotateAngle == 270 ? originSize.height : originSize.width;
+        double rotatedOriginHeight = rotateAngle == 90 || rotateAngle == 270 ? originSize.width : originSize.height;
+
+        double widthScaleRatio = width / rotatedOriginWidth;
+        double heightScaleRatio = height / rotatedOriginHeight;
+
+        scale = (float) Math.min(widthScaleRatio, heightScaleRatio);
+
+        offsetPoint.x = (float) ((width - rotatedOriginWidth * scale) / 2);
+        offsetPoint.y = (float) ((height - rotatedOriginHeight * scale) / 2);
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         // 绘制蒙版和边界区域
         if (scanInfo != null && !rotatedPoints.isEmpty()) {
-            final Size originSize = scanInfo.getOriginSize();
-            final int rotateAngle = scanInfo.getRotateAngle().getValue();
-            // point 旋转
 
-            final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-            final int height = getHeight() - getPaddingTop() - getPaddingBottom();
-
-            double rotatedOriginWidth = rotateAngle == 90 || rotateAngle == 270 ? originSize.height : originSize.width;
-            double rotatedOriginHeight = rotateAngle == 90 || rotateAngle == 270 ? originSize.width : originSize.height;
-
-            double widthScaleRatio = width / rotatedOriginWidth;
-            double heightScaleRatio = height / rotatedOriginHeight;
-
-            scale = (float) Math.min(widthScaleRatio, heightScaleRatio);
-
-            offsetPoint.x = (float) ((width - rotatedOriginWidth * scale) / 2);
-            offsetPoint.y = (float) ((height - rotatedOriginHeight * scale) / 2);
+            debug.start("绘制选中区域");
 
             // 选区路径
             pointPath.reset();
@@ -166,21 +176,27 @@ public class DotModifyView extends View {
             pointPath.close();
 
             // 绘制蒙版
-            int canvasWidth = canvas.getWidth();
-            int canvasHeight = canvas.getHeight();
-            int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, maskPaint, Canvas.ALL_SAVE_FLAG);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                maskPath.reset();
+                maskPath.addRect(getPaddingLeft(), getPaddingTop(), getPaddingLeft() + width, getPaddingTop() + height, Path.Direction.CCW);
+                maskPath.op(pointPath, Path.Op.XOR);
+                // FIXME: 2017/10/31 HUAWEI-P7手机上绘制一次15ms左右
+                canvas.drawPath(maskPath, maskPaint);
+            } else {
+                maskRectF.left = getPaddingLeft();
+                maskRectF.top = getPaddingTop();
+                maskRectF.right = maskRectF.left + width;
+                maskRectF.bottom = maskRectF.top + height;
+                int canvasWidth = canvas.getWidth();
+                int canvasHeight = canvas.getHeight();
+                int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, maskPaint, Canvas.ALL_SAVE_FLAG);
+                canvas.drawRect(maskRectF, maskPaint);
 
-            maskRectF.left = getPaddingLeft();
-            maskRectF.top = getPaddingTop();
-            maskRectF.right = maskRectF.left + width;
-            maskRectF.bottom = maskRectF.top + height;
-            canvas.drawRect(maskRectF, maskPaint);
-
-
-            maskPaint.setXfermode(xfermodeClear);
-            canvas.drawPath(pointPath, maskPaint);
-            maskPaint.setXfermode(null);
-            canvas.restoreToCount(layerId);
+                maskPaint.setXfermode(xfermodeClear);
+                canvas.drawPath(pointPath, maskPaint);
+                maskPaint.setXfermode(null);
+                canvas.restoreToCount(layerId);
+            }
 
             // 绘制 选区路径
             pathPaint.setStrokeWidth(pathWidth);
@@ -189,9 +205,12 @@ public class DotModifyView extends View {
             // 给每个点, 绘制圆环
             pathPaint.setStrokeWidth(dotPathWidth);
             for (PointD point : rotatedPoints) {
+                // 透明白色圆形
                 canvas.drawCircle(offsetPoint.x + (float) point.x * scale, offsetPoint.y + (float) point.y * scale, cornerRadius, dotPaint);
+                // 蓝色圆环
                 canvas.drawCircle(offsetPoint.x + (float) point.x * scale, offsetPoint.y + (float) point.y * scale, cornerRadius, pathPaint);
             }
+            debug.end("绘制选中区域");
         }
     }
 
@@ -237,12 +256,11 @@ public class DotModifyView extends View {
         final int rotateAngle = scanInfo.getRotateAngle().getValue();
         double rotatedOriginWidth = rotateAngle == 90 || rotateAngle == 270 ? originSize.height : originSize.width;
         double rotatedOriginHeight = rotateAngle == 90 || rotateAngle == 270 ? originSize.width : originSize.height;
-
         if (!checkListIsValid(rotatedPoints, curModifyPointD, new Size(rotatedOriginWidth, rotatedOriginHeight), verifyPath)) {
             curModifyPointD.x = tempPoint.x;
             curModifyPointD.y = tempPoint.y;
         } else {
-            invalidate();
+            postInvalidate();
             callZoomDot();
         }
     }
@@ -317,30 +335,5 @@ public class DotModifyView extends View {
             mat.release();
         }
         return isConvex;
-    }
-
-    /**
-     * @return
-     */
-    private static boolean isSegmentIntersectant(PointD s1, PointD e1, PointD s2, PointD e2) {
-        double tolerance = 1.0E-10D;
-        Line line1 = new Line(new Vector2D(s1.x, s1.y), new Vector2D(e1.x, e1.y), tolerance);
-        Line line2 = new Line(new Vector2D(s2.x, s2.y), new Vector2D(e2.x, e2.y), tolerance);
-        final Vector2D intersection = line1.intersection(line2);
-        if (intersection != null) {
-            PointD p = new PointD(intersection.getX(), intersection.getY());
-            return isPointInSegmentArea(s1, e1, p) && isPointInSegmentArea(s2, e2, p);
-        }
-        return false;
-    }
-
-    private static boolean isPointInSegmentArea(PointD s, PointD e, PointD p) {
-        double minX = Math.min(s.x, e.x);
-        double maxX = Math.max(s.x, e.x);
-        double minY = Math.min(s.y, e.y);
-        double maxY = Math.max(s.y, e.y);
-
-        return p.x >= minX && p.x <= maxX
-                && p.y >= minY && p.y <= maxY;
     }
 }

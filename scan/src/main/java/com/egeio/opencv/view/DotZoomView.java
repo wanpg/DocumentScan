@@ -19,6 +19,7 @@ import android.view.View;
 
 import com.egeio.opencv.model.PointD;
 import com.egeio.opencv.model.ScanInfo;
+import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.tools.Utils;
 import com.egeio.scan.R;
 
@@ -47,13 +48,17 @@ public class DotZoomView extends View {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
 
+    private Debug debug = new Debug(DotZoomView.class.getSimpleName());
     private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private ScanInfo scanInfo;
-    private Xfermode xfermode = new PorterDuffXfermode(PorterDuff.Mode.SRC_IN);
+    private Xfermode xfermode = new PorterDuffXfermode(PorterDuff.Mode.DST_IN);
+    private Xfermode xfermodeDSTOUT = new PorterDuffXfermode(PorterDuff.Mode.DST_OUT);
     private Matrix matrix = new Matrix();
 
-    public void setScanInfo(ScanInfo scanInfo) {
+    public void setScanInfoAndBitmap(ScanInfo scanInfo, Bitmap bitmap) {
         this.scanInfo = scanInfo;
+        this.bitmap = bitmap;
+        calSeveralSize();
     }
 
     private PointD dotPointD;
@@ -62,10 +67,6 @@ public class DotZoomView extends View {
     private Bitmap roundBitmap;
     Path path = new Path();
 
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
-    }
-
     /**
      * @param dotPointD  显示图片对应坐标系的当前的点
      * @param pointDList
@@ -73,16 +74,21 @@ public class DotZoomView extends View {
     public void drawDot(PointD dotPointD, List<PointD> pointDList) {
         this.dotPointD = dotPointD;
         this.pointDList = pointDList;
-        if (dotPointD != null) {
-            Utils.recycle(roundBitmap);
-            roundBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
-            Canvas c = new Canvas(roundBitmap);
-            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
-            p.setColor(Color.WHITE);
-            c.drawCircle((float) dotPointD.x, (float) dotPointD.y + getPaddingTop() - Utils.dp2px(getContext(), 80), Utils.dp2px(getContext(), 63), p);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+        } else {
+            createRoundBitmap();
         }
         postInvalidate();
     }
+
+    private int width, height;
+    private int rotateAngle;
+    // 相对于原始尺寸的绘制比例
+    float drawScaleRatio;
+    // 相对于屏幕显示尺寸缩放比例
+    final float zoomScale = 2.5f;
+    float offsetX, offsetY;
+    int canvasWidth, canvasHeight;
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -90,9 +96,27 @@ public class DotZoomView extends View {
             return;
         }
 
-        final int rotateAngle = scanInfo.getRotateAngle().getValue();
-        final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
+        debug.start("绘制放大镜");
+
+        // 创建新的layer
+        canvasWidth = canvas.getWidth();
+        canvasHeight = canvas.getHeight();
+
+        paint.reset();
+        paint.setAntiAlias(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            drawLargeKITKAT(canvas);
+        } else {
+            drawNormal(canvas);
+        }
+        debug.end("绘制放大镜");
+    }
+
+    private void calSeveralSize() {
+        rotateAngle = scanInfo.getRotateAngle().getValue();
+        width = getWidth() - getPaddingLeft() - getPaddingRight();
+        height = getHeight() - getPaddingTop() - getPaddingBottom();
 
         int rotatedBitmapWidth = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getHeight() : bitmap.getWidth();
         int rotatedBitmapHeight = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getWidth() : bitmap.getHeight();
@@ -102,23 +126,74 @@ public class DotZoomView extends View {
 
         // 缩放至屏幕合适的尺寸
         final float scale = Math.min(widthScaleRatio, heightScaleRatio);
-        // 相对于屏幕显示尺寸缩放比例
-        final int zoomScale = 3;
+
         // 相对于原始尺寸的绘制比例
-        float drawScaleRatio = scale * zoomScale;
+        drawScaleRatio = scale * zoomScale;
 
-        final float offsetX = getPaddingLeft();
-        final float offsetY = getPaddingTop() - Utils.dp2px(getContext(), 80);
+        offsetX = getPaddingLeft();
+        offsetY = getPaddingTop() - Utils.dp2px(getContext(), 80);
+    }
 
-        paint.reset();
-        paint.setAntiAlias(true);
 
-        // 创建新的layer
-        final int canvasWidth = canvas.getWidth();
-        final int canvasHeight = canvas.getHeight();
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void drawLargeKITKAT(Canvas canvas) {
         int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, paint, Canvas.ALL_SAVE_FLAG);
 
-        // 绘制图片
+        //绘制缩放的图片
+        drawScaleImage(canvas);
+
+        // 绘制线
+        // HUAWEI-P7 绘制3ms
+        drawScaleLines(canvas);
+
+        // 绘制圆
+        drawCircle(canvas, layerId);
+    }
+
+    private void drawNormal(Canvas canvas) {
+        int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, paint, Canvas.ALL_SAVE_FLAG);
+        // 绘制缩放的图片
+        drawScaleImage(canvas);
+
+        // 绘制线
+        drawScaleLines(canvas);
+
+        drawMagnifyCircle(canvas, layerId);
+    }
+
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void drawCircle(Canvas canvas, int restoreLayerId) {
+        paint.reset();
+        paint.setAntiAlias(true);
+        paint.setColor(Color.WHITE);
+        paint.setStyle(Paint.Style.FILL);
+
+        Path path = new Path();
+        path.addRect(0, 0, canvas.getWidth(), canvas.getHeight(), Path.Direction.CCW);
+
+        Path circlePath = new Path();
+        circlePath.addCircle((float) dotPointD.x, (float) dotPointD.y + offsetY, Utils.dp2px(getContext(), 61.5f), Path.Direction.CCW);
+        path.op(circlePath, Path.Op.XOR);
+
+        // FIXME: 2017/10/31 HUAWEI-P7绘制 35ms
+        paint.setXfermode(xfermodeDSTOUT);
+        canvas.drawPath(path, paint);
+        paint.setXfermode(null);
+        canvas.restoreToCount(restoreLayerId);
+
+        // 绘制背景白色
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(Utils.dp2px(getContext(), 3));
+        canvas.drawCircle((float) dotPointD.x, (float) dotPointD.y + offsetY, Utils.dp2px(getContext(), 61.5f), paint);
+    }
+
+    /**
+     * 绘制放大的图片
+     *
+     * @param canvas
+     */
+    private void drawScaleImage(Canvas canvas) {
         matrix.reset();
         matrix.preTranslate(-bitmap.getWidth() / 2f, -bitmap.getHeight() / 2f);
         matrix.postRotate(rotateAngle);
@@ -126,9 +201,17 @@ public class DotZoomView extends View {
         final double rx = (dotPointD.x) * (zoomScale - 1) - width * (zoomScale - 1) / 2f;
         final double ry = (dotPointD.y) * (zoomScale - 1) - height * (zoomScale - 1) / 2f;
         matrix.postTranslate(width / 2f + offsetX - (float) rx, height / 2f + offsetY - (float) ry);
-        canvas.drawBitmap(bitmap, matrix, paint);
 
-        // 绘制线
+        // FIXME: 2017/10/31 HUAWEI-P7绘制 50ms
+        canvas.drawBitmap(bitmap, matrix, paint);
+    }
+
+    /**
+     * 绘制放大的边框
+     *
+     * @param canvas
+     */
+    private void drawScaleLines(Canvas canvas) {
         if (pointDList != null) {
             final float offsetDotX = (float) (dotPointD.x * (zoomScale - 1));
             final float offsetDotY = (float) (dotPointD.y * (zoomScale - 1));
@@ -153,14 +236,19 @@ public class DotZoomView extends View {
             paint.setStrokeWidth(Utils.dp2px(getContext(), 2.5f));
             canvas.drawPath(path, paint);
         }
+    }
 
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+    /**
+     * 绘制放大镜，用bitmap作为相交计算的蒙版
+     *
+     * @param canvas
+     * @param restoreLayerId
+     */
+    private void drawMagnifyCircle(Canvas canvas, int restoreLayerId) {
+        paint.setXfermode(xfermode);
         canvas.drawBitmap(roundBitmap, 0, 0, paint);
         paint.setXfermode(null);
-
-        canvas.restoreToCount(layerId);
-
-
+        canvas.restoreToCount(restoreLayerId);
         // 绘制背景白色
         paint.reset();
         paint.setColor(Color.WHITE);
@@ -169,151 +257,14 @@ public class DotZoomView extends View {
         canvas.drawCircle((float) dotPointD.x, (float) dotPointD.y + offsetY, Utils.dp2px(getContext(), 61.5f), paint);
     }
 
-    /*@Override
-    protected void onDraw(Canvas canvas) {
-        if (bitmap == null || dotPointD == null) {
-            return;
-        }
-
-        final int rotateAngle = scanInfo.getRotateAngle().getValue();
-        final int width = getWidth() - getPaddingLeft() - getPaddingRight();
-        final int height = getHeight() - getPaddingTop() - getPaddingBottom();
-
-        int rotatedBitmapWidth = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getHeight() : bitmap.getWidth();
-        int rotatedBitmapHeight = rotateAngle == 90 || rotateAngle == 270 ? bitmap.getWidth() : bitmap.getHeight();
-
-        float widthScaleRatio = width * 1f / rotatedBitmapWidth;
-        float heightScaleRatio = height * 1f / rotatedBitmapHeight;
-
-        // 缩放至屏幕合适的尺寸
-        final float scale = Math.min(widthScaleRatio, heightScaleRatio);
-        // 相对于屏幕显示尺寸缩放比例
-        final int zoomScale = 3;
-        // 相对于原始尺寸的绘制比例
-        float drawScaleRatio = scale * zoomScale;
-
-        final float offsetX = (width - rotatedBitmapWidth * scale) / 2;
-        final float offsetY = (height - rotatedBitmapHeight * scale) / 2;
-
-        paint.reset();
-        paint.setAntiAlias(true);
-
-        // 绘制背景白色
-        paint.setColor(Color.WHITE);
-        canvas.drawCircle((float) dotPointD.x, (float) dotPointD.y + getPaddingTop(), Utils.dp2px(getContext(), 63), paint);
-
-        // 创建新的layer
-        final int canvasWidth = canvas.getWidth();
-        final int canvasHeight = canvas.getHeight();
-        int layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, paint, Canvas.ALL_SAVE_FLAG);
-
-        // 绘制蒙版白色
-        canvas.drawCircle((float) dotPointD.x, (float) dotPointD.y + getPaddingTop(), Utils.dp2px(getContext(), 60), paint);
-
-        // 设置图层混合模式
-        paint.setXfermode(xfermode);
-
-        // 绘制图片
-        matrix.reset();
-        matrix.preTranslate(-bitmap.getWidth() / 2f, -bitmap.getHeight() / 2f);
-        matrix.postRotate(rotateAngle);
-        matrix.postScale(drawScaleRatio, drawScaleRatio);
-        final double rx = (dotPointD.x) * (zoomScale - 1) - width * (zoomScale - 1) / 2f;
-        final double ry = (dotPointD.y) * (zoomScale - 1) - height * (zoomScale - 1) / 2f;
-        matrix.postTranslate(width / 2f + getPaddingLeft() - (float) rx, height / 2f + getPaddingTop() - (float) ry);
-        canvas.drawBitmap(bitmap, matrix, paint);
-
-        // 合并图层到制定layer
-        paint.setXfermode(null);
-        canvas.restoreToCount(layerId);
-
-        canvas.restore();
-        // 绘制线
-        if (pointDList != null) {
-            layerId = canvas.saveLayer(0, 0, canvasWidth, canvasHeight, paint, Canvas.ALL_SAVE_FLAG);
-            paint.setColor(Color.WHITE);
-            canvas.drawCircle((float) dotPointD.x, (float) dotPointD.y + getPaddingTop(), Utils.dp2px(getContext(), 60), paint);
-            final float offsetDotX = (float) (dotPointD.x * (zoomScale - 1));
-            final float offsetDotY = (float) (dotPointD.y * (zoomScale - 1));
-
-            path.reset();
-            Double minX = null, minY = null, maxX = null, maxY = null;
-            boolean isFirst = true;
-            for (PointD pointD : pointDList) {
-                double x = pointD.x * zoomScale - offsetDotX;
-                double y = pointD.y * zoomScale - offsetDotY + getPaddingTop();
-
-                minX = minX == null ? x : Math.min(minX, x);
-                minY = minY == null ? y : Math.min(minY, y);
-                maxX = maxX == null ? x : Math.max(minX, x);
-                maxY = maxY == null ? y : Math.max(maxY, y);
-                if (isFirst) {
-                    path.moveTo((float) x, (float) y);
-                } else {
-                    path.lineTo((float) x, (float) y);
-                }
-                isFirst = false;
-            }
-            path.close();
-
-            paint.setXfermode(xfermode);
-            paint.setColor(ContextCompat.getColor(getContext(), R.color.select_line));
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(Utils.dp2px(getContext(), 2.5f));
-            canvas.drawPath(path, paint);
-            paint.setXfermode(null);
-
-            canvas.restoreToCount(layerId);
-        }
-    }*/
-
-    PointD calPoint(PointD dotPoint, PointD point, PointD center, int r) {
-
-        double a2 = center.x;
-        double b2 = center.y;
-
-        if (dotPoint.y == point.y) {
-            // 纵坐标相等，水平直线
-            double y = dotPoint.y;
-            double d = Math.sqrt(r * r - Math.pow(y - b2, 2));
-            double x1 = d + a2;
-            double x2 = -d + a2;
-            return new PointD(x1, dotPoint.y);
-        } else if (dotPoint.x == point.x) {
-            double x = dotPoint.x;
-            double d = Math.sqrt(r * r - Math.pow(x - a2, 2));
-            double y1 = d + b2;
-            double y2 = -d + b2;
-            return new PointD(dotPoint.x, y1);
-        } else {
-            double a1 = (dotPoint.y - point.y) / (dotPoint.x - point.x);
-            double b1 = dotPoint.y - a1 * dotPoint.x;
-
-            double a = 1 + a1 * a1;
-            double b = -2 * a2 + 2 * a1 * b1 - 2 * a1 * b2;
-            double c = a2 * a2 + b1 * b1 + b2 + b2 - 2 * b1 * b2 - r * r;
-
-            double x, y;
-            if (a == 0) {
-                x = -c / b;
-                y = x * a1 + b1;
-                return new PointD(x, y);
-            } else {
-                double delt = 2 * b - 4 * a * c;
-                if (delt > 0) {
-                    double x1 = (-b + Math.sqrt(delt)) / (2 * a);
-                    double y1 = x1 * a1 + b1;
-                    double x2 = (-b - Math.sqrt(delt)) / (2 * a);
-                    double y2 = x2 * a1 + b1;
-                    return new PointD(x1, y1);
-                } else if (delt == 0) {
-                    x = -b / (2 * a);
-                    y = x * a1 + b1;
-                    return new PointD(x, y);
-                } else {
-                    return null;
-                }
-            }
+    private void createRoundBitmap() {
+        if (dotPointD != null) {
+            Utils.recycle(roundBitmap);
+            roundBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(roundBitmap);
+            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+            p.setColor(Color.WHITE);
+            c.drawCircle((float) dotPointD.x, (float) dotPointD.y + getPaddingTop() - Utils.dp2px(getContext(), 80), Utils.dp2px(getContext(), 63), p);
         }
     }
 }
