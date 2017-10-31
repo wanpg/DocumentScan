@@ -23,7 +23,7 @@ allprojects {
 
 ext {
     GROUP = 'com.egeio'
-    VERSION = '0.0.8-SNAPSHOT'
+    VERSION = '0.0.9-SNAPSHOT'
 
     TEST_REPO = '../repo'
 
