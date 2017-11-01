@@ -18,6 +18,7 @@ import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.SysUtils;
+import com.egeio.opencv.tools.SystemConfig;
 import com.egeio.opencv.view.DotModifyView;
 import com.egeio.opencv.view.DotZoomView;
 import com.egeio.opencv.view.PreviewImageView;
@@ -45,10 +46,12 @@ public class DotModifyFragment extends BaseScanFragment {
     private View mContainer;
     private DotModifyView dotModifyView;
     private PreviewImageView imagePreviewView;
-    private DotZoomView dotZoomView;
     private ScanInfo scanInfo;
     private ScanDataInterface scanDataInterface;
     private ScanDataManager scanDataManager;
+
+
+    private DotZoomView dotZoomView;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -64,19 +67,21 @@ public class DotModifyFragment extends BaseScanFragment {
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_dot_modify, null);
-
             dotModifyView = mContainer.findViewById(R.id.dot_modify);
             imagePreviewView = mContainer.findViewById(R.id.image_preview);
-            dotZoomView = mContainer.findViewById(R.id.dot_zoom);
-            SysUtils.setStatysBarPadding(mContainer.findViewById(R.id.area_image));
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                final int statusBarHeight = SysUtils.getStatusBarHeight(getContext());
-                dotZoomView.setPadding(
-                        dotZoomView.getPaddingLeft(),
-                        dotZoomView.getPaddingTop() + statusBarHeight,
-                        dotZoomView.getPaddingRight(),
-                        dotZoomView.getPaddingBottom());
+            dotZoomView = new DotZoomView(inflater.getContext());
+            ((ViewGroup) getActivity().getWindow().getDecorView()).addView(dotZoomView);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+
             }
+            SystemConfig systemConfig = new SystemConfig(getActivity());
+            final int statusBarHeight = Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN ? systemConfig.getStatusBarHeight() : 0;
+            final int navBarHeight = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && systemConfig.getNavigationBarPosition() == 1 ? systemConfig.getNavigationBarHeight() : 0;
+            dotZoomView.setPadding(
+                    dotZoomView.getPaddingLeft(),
+                    dotZoomView.getPaddingTop() + statusBarHeight + inflater.getContext().getResources().getDimensionPixelOffset(R.dimen.action_bar_height),
+                    dotZoomView.getPaddingRight(),
+                    dotZoomView.getPaddingBottom() + navBarHeight);
             TextView textCancel = mContainer.findViewById(R.id.cancel);
             textCancel.setText(scanDataManager.getCancel());
             textCancel.setOnClickListener(new View.OnClickListener() {
@@ -105,6 +110,14 @@ public class DotModifyFragment extends BaseScanFragment {
         return mContainer;
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (dotZoomView != null) {
+            ((ViewGroup) getActivity().getWindow().getDecorView()).removeView(dotZoomView);
+        }
+    }
+
     private Worker imageLoadWorker;
     private boolean isFirst = true;
     private Bitmap cachedBitmap;
@@ -112,6 +125,7 @@ public class DotModifyFragment extends BaseScanFragment {
     @Override
     public void onResume() {
         super.onResume();
+        SysUtils.showSystemUI(getActivity());
         if (isFirst) {
             new Thread(imageLoadWorker = new Worker() {
                 @Override

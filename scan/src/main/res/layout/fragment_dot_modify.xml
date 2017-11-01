@@ -45,10 +45,4 @@
             android:layout_height="match_parent"
             android:layout_marginTop="@dimen/action_bar_height" />
     </FrameLayout>
-
-    <com.egeio.opencv.view.DotZoomView
-        android:id="@+id/dot_zoom"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingTop="@dimen/action_bar_height" />
 </FrameLayout>
