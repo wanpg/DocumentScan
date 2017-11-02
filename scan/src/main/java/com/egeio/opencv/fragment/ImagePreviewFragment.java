@@ -1,7 +1,6 @@
 package com.egeio.opencv.fragment;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -9,20 +8,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.egeio.opencv.model.PointD;
-import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
-import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
 import com.egeio.opencv.view.PreviewImageView;
+import com.egeio.opencv.work.ImageLoadWorker;
 import com.egeio.opencv.work.Worker;
 import com.egeio.scan.R;
-
-import org.opencv.android.Utils;
-import org.opencv.core.Mat;
-import org.opencv.core.Size;
-
-import java.util.ArrayList;
 
 /**
  * Created by wangjinpeng on 2017/10/11.
@@ -103,92 +94,32 @@ public class ImagePreviewFragment extends BaseScanFragment {
         if (imageLoadWorker != null) {
             imageLoadWorker.stopWork();
         }
-        new Thread(imageLoadWorker = new Worker() {
+        new Thread(imageLoadWorker = new ImageLoadWorker(scanInfo) {
+
             @Override
-            public void doWork() {
-                try {
-                    debug.start("等待imageView绘制");
-                    if (imageView.getHeight() <= 0 || imageView.getWidth() <= 0) {
-                        while (true) {
-                            if (imageView.getWidth() > 0 && imageView.getHeight() > 0) {
-                                break;
-                            }
-                            assertWorkStopped();
-                            try {
-                                Thread.sleep(20);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+            protected void doFirst() {
+                debug.start("等待imageView绘制");
+                if (imageView.getHeight() <= 0 || imageView.getWidth() <= 0) {
+                    while (true) {
+                        if (imageView.getWidth() > 0 && imageView.getHeight() > 0) {
+                            break;
+                        }
+                        assertWorkStopped();
+                        try {
+                            Thread.sleep(20);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
                     }
-                    debug.end("等待imageView绘制");
-
-                    debug.start("计算目标尺寸");
-                    final ScanInfo.Angle rotateAngle = scanInfo.getRotateAngle();
-                    // 此处对
-                    Size originSize = scanInfo.getOriginSize();
-
-                    // 计算出原图透视转换后图片的尺寸
-                    final PointInfo currentPointInfo = scanInfo.getCurrentPointInfo();
-                    final ArrayList<PointD> points = currentPointInfo.getPoints();
-                    Size perspectiveSize;
-                    if (!scanInfo.matchSize()) {
-                        perspectiveSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(points));
-                    } else {
-                        perspectiveSize = new Size(originSize.width, originSize.height);
-                    }
-                    debug.end("计算目标尺寸");
-
-                    // 根据转换后的size 和 imageView的最小的size
-                    final int imageViewWidth = imageView.getWidth();
-                    final int imageViewHeight = imageView.getHeight();
-
-                    // 找出imageView最长的边，这样来设置图片的缩放比例
-                    int imageViewMaxSide = Math.max(imageViewWidth, imageViewHeight);
-                    final double maxPerSide = Math.max(perspectiveSize.width, perspectiveSize.height);
-                    final double scaleRatio = maxPerSide / imageViewMaxSide;
-
-                    assertWorkStopped();
-                    debug.start("加载图片Bitmap");
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inPreferredConfig = Bitmap.Config.RGB_565;
-                    options.inSampleSize = Math.max(2, CvUtils.calculateInSampleSize((int) perspectiveSize.width, (int) perspectiveSize.height, imageViewMaxSide, imageViewMaxSide));
-                    Bitmap bitmapSrc = BitmapFactory.decodeFile(scanInfo.getPath(), options);
-                    debug.end("加载图片Bitmap");
-                    debug.d("bitmapSrc--size:[" + bitmapSrc.getWidth() + ", " + bitmapSrc.getHeight() + "]");
-
-                    // 角度为0，面积匹配，没有优化的状态返回原图
-                    if (scanInfo.matchSize()
-                            && !scanInfo.isOptimized()) {
-                        //原图
-                    } else {
-                        assertWorkStopped();
-                        debug.start("bitmap to mat");
-                        Mat frameMat = new Mat();
-                        Utils.bitmapToMat(bitmapSrc, frameMat);
-                        debug.end("bitmap to mat");
-
-                        assertWorkStopped();
-                        debug.start("拉伸优化");
-                        frameMat = CvUtils.formatFromScanInfo(frameMat, scanInfo);
-                        debug.end("拉伸优化");
-
-                        assertWorkStopped();
-                        debug.start("生成bitmap");
-                        Bitmap bitmap = Bitmap.createBitmap(frameMat.width(), frameMat.height(), Bitmap.Config.RGB_565);
-                        Utils.matToBitmap(frameMat, bitmap);
-                        frameMat.release();
-                        com.egeio.opencv.tools.Utils.recycle(bitmapSrc);
-                        bitmapSrc = bitmap;
-                        debug.end("生成bitmap");
-                    }
-                    assertWorkStopped();
-                    onImageLoaded(bitmapSrc, rotateAngle);
-                } catch (Exception e) {
-                    if (e instanceof WorkStoppedException) {
-                        // 此处对bitmap等进行回收
-                    }
                 }
+                setSize(imageView.getWidth(), imageView.getHeight());
+                debug.end("等待imageView绘制");
+            }
+
+            @Override
+            public void onImageLoaded(Bitmap bitmap, ScanInfo scanInfo) {
+                assertWorkStopped();
+                ImagePreviewFragment.this.onImageLoaded(bitmap, scanInfo.getRotateAngle());
             }
         }).start();
     }

@@ -20,8 +20,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.target.ImageViewTarget;
 import com.egeio.opencv.ScanDataInterface;
 import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.model.PointD;
@@ -29,14 +27,15 @@ import com.egeio.opencv.model.PointInfo;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
 import com.egeio.opencv.tools.Debug;
-import com.egeio.opencv.tools.MatBitmapTransformation;
 import com.egeio.opencv.tools.SysUtils;
 import com.egeio.opencv.view.CameraView;
 import com.egeio.opencv.view.LoadingInfoHolder;
 import com.egeio.opencv.view.PreviewImageView;
 import com.egeio.opencv.view.ScanInfoView;
+import com.egeio.opencv.work.ImageLoadWorker;
 import com.egeio.opencv.work.ImageSaveWorker;
 import com.egeio.opencv.work.SquareFindWorker;
+import com.egeio.opencv.work.Worker;
 import com.egeio.scan.R;
 
 import org.opencv.android.Utils;
@@ -284,6 +283,8 @@ public class ScanFragment extends BaseScanFragment implements Observer {
         txtNumber.setText(String.valueOf(number));
     }
 
+    private Worker thumbnailWorker;
+
     private void showThumbnail() {
         handler.post(new Runnable() {
             @Override
@@ -295,31 +296,24 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                 }
 
                 final ScanInfo scanInfo = scanDataManager.getScanInfo(scanSize - 1);
-                final Size originSize = scanInfo.getOriginSize();
-                // 变换后的size
-                Size perSize;
-                if (!scanInfo.matchSize()) {
-                    perSize = com.egeio.opencv.tools.Utils.calPerspectiveSize(originSize.width, originSize.height, CvUtils.pointD2point(scanInfo.getCurrentPointInfo().getPoints()));
-                } else {
-                    perSize = new Size(originSize.width, originSize.height);
+
+                if (thumbnailWorker != null) {
+                    thumbnailWorker.stopWork();
                 }
                 final int thumbnailSize = getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
-                double scale = thumbnailSize / Math.max(perSize.width, perSize.height);
-                int tarSize = (int) (Math.max(originSize.width, originSize.height) * scale);
-                // FIXME: 2017/10/25 处理扫描尺寸
-                Glide.with(ScanFragment.this)
-                        .load(scanInfo.getPath())
-                        .asBitmap()
-                        .atMost()
-                        .transform(new MatBitmapTransformation(getContext(), scanInfo))
-                        .override(tarSize, tarSize)
-                        .into(new ImageViewTarget<Bitmap>(thumbnail) {
+                new Thread(thumbnailWorker = new ImageLoadWorker(scanInfo, thumbnailSize, thumbnailSize) {
+                    @Override
+                    public void onImageLoaded(final Bitmap bitmap, final ScanInfo scanInfo) {
+                        assertWorkStopped();
+                        thumbnail.post(new Runnable() {
                             @Override
-                            protected void setResource(Bitmap resource) {
-                                thumbnail.setImageBitmap(resource);
+                            public void run() {
+                                thumbnail.setImageBitmap(bitmap);
                                 thumbnail.setRotation(scanInfo.getRotateAngle().getValue());
                             }
                         });
+                    }
+                }).start();
             }
         });
     }
