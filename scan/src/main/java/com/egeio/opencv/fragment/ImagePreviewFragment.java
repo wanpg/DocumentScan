@@ -84,8 +84,8 @@ public class ImagePreviewFragment extends BaseScanFragment {
     private boolean hasShownImage = false;
 
     @Override
-    public void onDestroyView() {
-        super.onDestroyView();
+    public void onDestroy() {
+        super.onDestroy();
         if (imageView != null) {
             imageView.setBitmap(null);
         }

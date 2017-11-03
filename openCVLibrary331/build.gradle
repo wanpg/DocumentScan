@@ -16,3 +16,4 @@ android {
         }
     }
 }
+apply from: 'maven.gradle'
