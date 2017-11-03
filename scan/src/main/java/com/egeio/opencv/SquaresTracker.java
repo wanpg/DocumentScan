@@ -168,15 +168,16 @@ public class SquaresTracker {
         for (MatOfPoint mat : contours) {
             // 转换为双精度点
             mat.convertTo(mat, CvType.CV_32FC2);
+            MatOfPoint2f matOfPoint2f = new MatOfPoint2f(mat);
             // approximate contour with accuracy proportional
             // to the contour perimeter
             // 多变形逼近
             MatOfPoint2f approx = new MatOfPoint2f();
 
             Imgproc.approxPolyDP(
-                    mat,
+                    matOfPoint2f,
                     approx,
-                    Imgproc.arcLength(mat, true) * 0.02,
+                    Imgproc.arcLength(matOfPoint2f, true) * 0.02,
                     true);
 
             // square contours should have 4 vertices after approximation
@@ -190,7 +191,7 @@ public class SquaresTracker {
                     Math.abs(Imgproc.contourArea(approx)) > minArea) {
                 final List<Point> pointList = selectPoints(points, 5);
                 if (pointList.size() == 4
-                        && Imgproc.isContourConvex(Converters.vector_Point_to_Mat(pointList))) {
+                        && Imgproc.isContourConvex(new MatOfPoint(Converters.vector_Point_to_Mat(pointList)))) {
                     double maxCosine = 0;
                     for (int j = 2; j < 5; j++) {
                         // find the maximum cosine of the angle between joint edges
@@ -210,7 +211,7 @@ public class SquaresTracker {
 
     private List<Point> selectPoints(List<Point> pointList, int selectTimes) {
         if (pointList.size() > 4) {
-            double arc = Imgproc.arcLength(Converters.vector_Point2f_to_Mat(pointList), true);
+            double arc = Imgproc.arcLength(new MatOfPoint2f(Converters.vector_Point2f_to_Mat(pointList)), true);
             int index = 0;
             while (index != pointList.size() - 1) {
                 if (pointList.size() == 4) {

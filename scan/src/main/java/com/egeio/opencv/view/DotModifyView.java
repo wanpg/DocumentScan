@@ -25,6 +25,7 @@ import com.egeio.opencv.tools.Utils;
 import com.egeio.scan.R;
 
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.utils.Converters;
@@ -331,7 +332,7 @@ public class DotModifyView extends View {
             isConvex = path.isConvex();
         } else {
             final Mat mat = Converters.vector_Point_to_Mat(CvUtils.pointD2point(pointDList));
-            isConvex = Imgproc.isContourConvex(mat);
+            isConvex = Imgproc.isContourConvex(new MatOfPoint(mat));
             mat.release();
         }
         return isConvex;
