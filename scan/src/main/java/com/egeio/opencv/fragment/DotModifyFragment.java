@@ -114,13 +114,16 @@ public class DotModifyFragment extends BaseScanFragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (dotZoomView != null) {
+            dotZoomView.setScanInfoAndBitmap(null, null);
             ((ViewGroup) getActivity().getWindow().getDecorView()).removeView(dotZoomView);
+        }
+        if (imagePreviewView != null) {
+            imagePreviewView.setBitmap(null);
         }
     }
 
     private Worker imageLoadWorker;
     private boolean isFirst = true;
-    private Bitmap cachedBitmap;
 
     @Override
     public void onResume() {
@@ -148,7 +151,7 @@ public class DotModifyFragment extends BaseScanFragment {
                         options.inPreferredConfig = Bitmap.Config.RGB_565;
                         final Size originSize = scanInfo.getOriginSize();
                         options.inSampleSize = Math.max(2, CvUtils.calculateInSampleSize((int) originSize.width, (int) originSize.height, imageViewMaxSide, imageViewMaxSide));
-                        cachedBitmap = BitmapFactory.decodeFile(scanInfo.getPath(), options);
+                        Bitmap cachedBitmap = BitmapFactory.decodeFile(scanInfo.getPath(), options);
                         // imageView绘制
                         imagePreviewView.setBitmap(cachedBitmap);
                         imagePreviewView.setRotateAngle(scanInfo.getRotateAngle().getValue());

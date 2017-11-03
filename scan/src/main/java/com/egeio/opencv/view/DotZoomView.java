@@ -114,6 +114,9 @@ public class DotZoomView extends View {
     }
 
     private void calSeveralSize() {
+        if (scanInfo == null || bitmap == null) {
+            return;
+        }
         rotateAngle = scanInfo.getRotateAngle().getValue();
         width = getWidth() - getPaddingLeft() - getPaddingRight();
         height = getHeight() - getPaddingTop() - getPaddingBottom();

@@ -17,7 +17,6 @@ import android.view.View;
 
 public class PreviewImageView extends View {
 
-
     private Matrix matrix = new Matrix();
 
     public PreviewImageView(Context context) {
@@ -39,6 +38,11 @@ public class PreviewImageView extends View {
 
     private Bitmap bitmap;
     private int rotateAngle;
+    private ScaleType scaleType = ScaleType.CENTER;
+
+    public void setScaleType(ScaleType scaleType) {
+        this.scaleType = scaleType;
+    }
 
     public synchronized void setBitmap(Bitmap bitmap) {
         this.bitmap = bitmap;
@@ -80,7 +84,11 @@ public class PreviewImageView extends View {
         float widthScaleRatio = width * 1f / rotatedBitmapWidth;
         float heightScaleRatio = height * 1f / rotatedBitmapHeight;
 
-        drawScaleRatio = Math.min(widthScaleRatio, heightScaleRatio);
+        if (scaleType == ScaleType.CENTER) {
+            drawScaleRatio = Math.min(widthScaleRatio, heightScaleRatio);
+        } else {
+            drawScaleRatio = Math.max(widthScaleRatio, heightScaleRatio);
+        }
 
         matrix.reset();
         matrix.preTranslate(-bitmap.getWidth() / 2f, -bitmap.getHeight() / 2f);
@@ -89,5 +97,10 @@ public class PreviewImageView extends View {
         matrix.postTranslate(width / 2f + getPaddingLeft(), height / 2f + getPaddingTop());
 
         canvas.drawBitmap(bitmap, matrix, paint);
+    }
+
+    public enum ScaleType {
+        CENTER,
+        CENTER_CROP
     }
 }

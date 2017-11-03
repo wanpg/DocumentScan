@@ -81,13 +81,14 @@ public class ImagePreviewFragment extends BaseScanFragment {
     }
 
     private Worker imageLoadWorker;
-    private Bitmap cachedBitmap;
     private boolean hasShownImage = false;
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-        com.egeio.opencv.tools.Utils.recycle(cachedBitmap);
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (imageView != null) {
+            imageView.setBitmap(null);
+        }
     }
 
     private void showImage() {
@@ -126,9 +127,7 @@ public class ImagePreviewFragment extends BaseScanFragment {
 
     private synchronized void onImageLoaded(final Bitmap bitmap, final ScanInfo.Angle angle) {
         hasShownImage = true;
-        com.egeio.opencv.tools.Utils.recycle(cachedBitmap);
-        cachedBitmap = bitmap;
-        imageView.setBitmap(cachedBitmap);
+        imageView.setBitmap(bitmap);
         imageView.setRotateAngle(scanInfo.getRotateAngle().getValue());
         imageView.postInvalidate();
     }

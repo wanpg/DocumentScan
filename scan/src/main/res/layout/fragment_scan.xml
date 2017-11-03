@@ -49,7 +49,7 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true">
 
-            <ImageView
+            <com.egeio.opencv.view.PreviewImageView
                 android:id="@+id/thumbnail"
                 android:layout_width="@dimen/thumbnail_size"
                 android:layout_height="@dimen/thumbnail_size"

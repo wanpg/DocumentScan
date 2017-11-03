@@ -52,6 +52,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static com.egeio.opencv.DocumentScan.MAX_PAGE_NUM;
 import static com.egeio.opencv.DocumentScan.SQUARE_FIND_SCALE;
 import static com.egeio.opencv.tools.CvUtils.findBestPointInfo;
+import static com.egeio.opencv.tools.Utils.recycle;
 
 public class ScanFragment extends BaseScanFragment implements Observer {
 
@@ -60,8 +61,8 @@ public class ScanFragment extends BaseScanFragment implements Observer {
 
     private CameraView cameraView;
     private ScanInfoView scanInfoView;
-    private ImageView thumbnail, flash;
-    private PreviewImageView thumbnailPreview;
+    private ImageView flash;
+    private PreviewImageView thumbnail, thumbnailPreview;
     private TextView txtNumber;
     private View viewArrow;
 
@@ -75,8 +76,6 @@ public class ScanFragment extends BaseScanFragment implements Observer {
     Debug debug = new Debug(ScanFragment.class.getSimpleName());
 
     final Object lockObject = new Object();
-
-    private SoftReference<Bitmap> cachedPreviewBitmap;
 
     /**
      * 标记照片正在拍照并执行动画的过程
@@ -127,6 +126,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
             cameraView = mContainer.findViewById(R.id.camera_view);
             scanInfoView = mContainer.findViewById(R.id.scan_info);
             thumbnail = mContainer.findViewById(R.id.thumbnail);
+            thumbnail.setScaleType(PreviewImageView.ScaleType.CENTER_CROP);
             thumbnailPreview = mContainer.findViewById(R.id.thumbnail_preview);
             flash = mContainer.findViewById(R.id.flash);
             txtNumber = mContainer.findViewById(R.id.text_num);
@@ -168,6 +168,16 @@ public class ScanFragment extends BaseScanFragment implements Observer {
         return mContainer;
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (thumbnail != null) {
+            thumbnail.setBitmap(null);
+        }
+        if (thumbnailPreview != null) {
+            thumbnailPreview.setBitmap(null);
+        }
+    }
 
     void changeFlashResource() {
         flash.setImageResource(cameraView.isFlashOn() ? R.drawable.ic_flash_on : R.drawable.ic_flash_off);
@@ -305,13 +315,9 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                     @Override
                     public void onImageLoaded(final Bitmap bitmap, final ScanInfo scanInfo) {
                         assertWorkStopped();
-                        thumbnail.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                thumbnail.setImageBitmap(bitmap);
-                                thumbnail.setRotation(scanInfo.getRotateAngle().getValue());
-                            }
-                        });
+                        thumbnail.setBitmap(bitmap);
+                        thumbnail.setRotateAngle(scanInfo.getRotateAngle().getValue());
+                        thumbnail.postInvalidate();
                     }
                 }).start();
             }
@@ -326,8 +332,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                     return;
                 }
                 debug.start("动画设置");
-                cachedPreviewBitmap = new SoftReference<>(bitmap);
-                thumbnailPreview.setBitmap(cachedPreviewBitmap.get());
+                thumbnailPreview.setBitmap(bitmap);
                 thumbnailPreview.setRotateAngle(angle.getValue());
                 thumbnailPreview.postInvalidate();
 
@@ -369,7 +374,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                     public void onAnimationEnd(Animator animation) {
                         thumbnailPreview.setVisibility(View.GONE);
                         thumbnailPreview.setBitmap(null);
-                        com.egeio.opencv.tools.Utils.recycle(bitmap);
+                        recycle(bitmap);
                         debug.end("开始动画");
                         handler.postDelayed(new Runnable() {
                             @Override
