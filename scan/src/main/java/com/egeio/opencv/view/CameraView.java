@@ -32,6 +32,11 @@ import java.util.List;
 
 public class CameraView extends SurfaceView implements SurfaceHolder.Callback, Camera.PreviewCallback {
 
+    public interface CameraCallback {
+
+        void onOpenException(Exception e);
+    }
+
     private static final String TAG = CameraView.class.getSimpleName();
 
     private Camera camera;
@@ -39,6 +44,11 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
     private Debug debug;
     private JavaCameraFrame javaCameraFrame;
     private float scaleRatio = 1f;
+    private CameraCallback cameraCallback;
+
+    public void setCameraCallback(CameraCallback cameraCallback) {
+        this.cameraCallback = cameraCallback;
+    }
 
     public CameraView(Context context) {
         super(context);
@@ -70,22 +80,40 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
 
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
-        openCamera();
-        initFrame();
-        fitCameraView();
-        startPreviewDisplay(surfaceHolder);
+        try {
+            openCamera();
+            initFrame();
+            fitCameraView();
+            startPreviewDisplay(surfaceHolder);
+        } catch (Exception e) {
+            if (cameraCallback != null) {
+                cameraCallback.onOpenException(e);
+            }
+        }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-        openCamera();
-        startPreviewDisplay(surfaceHolder);
+        try {
+            openCamera();
+            startPreviewDisplay(surfaceHolder);
+        } catch (Exception e) {
+            if (cameraCallback != null) {
+                cameraCallback.onOpenException(e);
+            }
+        }
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-        stopPreviewDisplay();
-        releaseCamera();
+        try {
+            stopPreviewDisplay();
+            releaseCamera();
+        } catch (Exception e) {
+            if (cameraCallback != null) {
+                cameraCallback.onOpenException(e);
+            }
+        }
     }
 
     @Override
@@ -109,11 +137,15 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
     }
 
     private void initFrame() {
-        Camera.Size previewSize = camera.getParameters().getPreviewSize();
-        if (javaCameraFrame != null) {
-            javaCameraFrame.release();
+        try {
+            Camera.Size previewSize = camera.getParameters().getPreviewSize();
+            if (javaCameraFrame != null) {
+                javaCameraFrame.release();
+            }
+            javaCameraFrame = new JavaCameraFrame(previewSize.width, previewSize.height, camera.getParameters().getPreviewFormat());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        javaCameraFrame = new JavaCameraFrame(previewSize.width, previewSize.height, camera.getParameters().getPreviewFormat());
     }
 
     private void openCamera() {
@@ -126,19 +158,26 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
             }
         }
         if (camera == null) {
-            camera = Camera.open();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                camera.enableShutterSound(true);
+            try {
+                camera = Camera.open();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            final Camera.Parameters params = camera.getParameters();
-//          params.setSceneMode(Camera.Parameters.SCENE_MODE_BARCODE);
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-            Camera.Size bestPreviewSize = findBestPreviewSize(params);
-            Camera.Size bestPictureSize = findBestPictureSize(params, bestPreviewSize);
-            params.setPreviewSize(bestPreviewSize.width, bestPreviewSize.height);
-            params.setPictureSize(bestPictureSize.width, bestPictureSize.height);
-            camera.setParameters(params);
         }
+        if (camera == null) {
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            camera.enableShutterSound(true);
+        }
+        final Camera.Parameters params = camera.getParameters();
+//          params.setSceneMode(Camera.Parameters.SCENE_MODE_BARCODE);
+        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+        Camera.Size bestPreviewSize = findBestPreviewSize(params);
+        Camera.Size bestPictureSize = findBestPictureSize(params, bestPreviewSize);
+        params.setPreviewSize(bestPreviewSize.width, bestPreviewSize.height);
+        params.setPictureSize(bestPictureSize.width, bestPictureSize.height);
+        camera.setParameters(params);
         camera.setDisplayOrientation(Utils.getCameraOrientation(getContext()));
     }
 

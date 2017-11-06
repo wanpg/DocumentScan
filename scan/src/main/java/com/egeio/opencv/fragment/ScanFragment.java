@@ -43,7 +43,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
-import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -54,7 +53,7 @@ import static com.egeio.opencv.DocumentScan.SQUARE_FIND_SCALE;
 import static com.egeio.opencv.tools.CvUtils.findBestPointInfo;
 import static com.egeio.opencv.tools.Utils.recycle;
 
-public class ScanFragment extends BaseScanFragment implements Observer {
+public class ScanFragment extends BaseScanFragment implements Observer, CameraView.CameraCallback {
 
     private static final int MSG_AUTO_TAKE_PHOTO = 1001;
     private static final int MSG_SHOW_MAX_PAGE_TIP = 1002;
@@ -124,6 +123,7 @@ public class ScanFragment extends BaseScanFragment implements Observer {
         if (mContainer == null) {
             mContainer = inflater.inflate(R.layout.fragment_scan, null);
             cameraView = mContainer.findViewById(R.id.camera_view);
+            cameraView.setCameraCallback(this);
             scanInfoView = mContainer.findViewById(R.id.scan_info);
             thumbnail = mContainer.findViewById(R.id.thumbnail);
             thumbnail.setScaleType(PreviewImageView.ScaleType.CENTER_CROP);
@@ -310,7 +310,10 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                 if (thumbnailWorker != null) {
                     thumbnailWorker.stopWork();
                 }
-                final int thumbnailSize = getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
+                if (isDetached() || !isAdded() || getActivity() == null) {
+                    return;
+                }
+                final int thumbnailSize = getActivity().getResources().getDimensionPixelOffset(R.dimen.thumbnail_size);
                 new Thread(thumbnailWorker = new ImageLoadWorker(scanInfo, thumbnailSize, thumbnailSize) {
                     @Override
                     public void onImageLoaded(final Bitmap bitmap, final ScanInfo scanInfo) {
@@ -513,5 +516,10 @@ public class ScanFragment extends BaseScanFragment implements Observer {
                 lockObject.notify();
             }
         }
+    }
+
+    @Override
+    public void onOpenException(Exception e) {
+        squareFindWorker.stopWork();
     }
 }

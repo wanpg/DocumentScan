@@ -15,9 +15,9 @@ import org.opencv.core.Size;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.content.ContentValues.TAG;
-
 public abstract class SquareFindWorker extends Worker {
+
+    private static final String TAG = SquareFindWorker.class.getSimpleName();
 
     private Debug debug = new Debug(SquareFindWorker.class.getSimpleName());
     private SquaresTracker squaresTracker;
