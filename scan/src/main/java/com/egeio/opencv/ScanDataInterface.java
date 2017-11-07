@@ -25,4 +25,6 @@ public interface ScanDataInterface {
      * @param msg   只在 shown == true 时有用
      */
     void showLoading(boolean shown, String msg);
+
+    void onCameraException(Exception e);
 }

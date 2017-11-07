@@ -519,7 +519,15 @@ public class ScanFragment extends BaseScanFragment implements Observer, CameraVi
     }
 
     @Override
-    public void onOpenException(Exception e) {
+    public void onOpenException(final Exception e) {
         squareFindWorker.stopWork();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (scanDataInterface != null) {
+                    scanDataInterface.onCameraException(e);
+                }
+            }
+        });
     }
 }

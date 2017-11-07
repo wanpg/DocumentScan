@@ -178,6 +178,11 @@ public class ScanActivity extends AppCompatActivity implements ScanDataInterface
     }
 
     @Override
+    public void onCameraException(Exception e) {
+        
+    }
+
+    @Override
     public void onBackPressed() {
         final Fragment fragment = getSupportFragmentManager().findFragmentById(Window.ID_ANDROID_CONTENT);
         if (fragment instanceof BaseScanFragment && ((BaseScanFragment) fragment).onBackPressed()) {
