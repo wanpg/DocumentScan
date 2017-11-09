@@ -12,4 +12,5 @@
     <string name="edit_over">下一步</string>
     <string name="restore">还原</string>
     <string name="generating">正在生成文档</string>
+    <string name="pdf_name">新文档_%1$s.pdf</string>
 </resources>

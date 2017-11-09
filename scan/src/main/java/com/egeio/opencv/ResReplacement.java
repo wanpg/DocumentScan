@@ -44,4 +44,6 @@ public interface ResReplacement {
     @StringRes
     int getGenerating();
 
+    @StringRes
+    int getPdfName();
 }

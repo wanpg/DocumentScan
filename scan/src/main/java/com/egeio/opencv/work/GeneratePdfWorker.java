@@ -1,6 +1,7 @@
 package com.egeio.opencv.work;
 
 import android.content.Context;
+import android.support.annotation.StringRes;
 
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.CvUtils;
@@ -29,6 +30,9 @@ public abstract class GeneratePdfWorker extends Worker {
 
     public abstract void onPdfGenerated(String savePath);
 
+    @StringRes
+    public abstract int onGetPdfNameRes();
+
     private Context context;
 
     private final List<ScanInfo> scanInfoList;
@@ -41,7 +45,8 @@ public abstract class GeneratePdfWorker extends Worker {
         this.context = context;
         this.scanInfoList = scanInfoList;
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssS", Locale.getDefault());
-        savePath = Utils.getPdfFilePath(context, String.format(Locale.getDefault(), "新文档_%s.pdf", dateFormat.format(System.currentTimeMillis())));
+        String pdfName = context.getString(onGetPdfNameRes(), dateFormat.format(System.currentTimeMillis()));
+        savePath = Utils.getPdfFilePath(context, pdfName);
     }
 
     @Override

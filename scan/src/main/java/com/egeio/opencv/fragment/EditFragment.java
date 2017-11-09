@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.egeio.opencv.DocumentScan;
 import com.egeio.opencv.ScanDataInterface;
 import com.egeio.opencv.ScanDataManager;
 import com.egeio.opencv.model.ScanInfo;
@@ -253,6 +252,11 @@ public class EditFragment extends BaseScanFragment {
                         scanDataInterface.onPdfGenerated(savePath);
                     }
                 });
+            }
+
+            @Override
+            public int onGetPdfNameRes() {
+                return scanDataManager.getPdfName();
             }
         }).start();
     }

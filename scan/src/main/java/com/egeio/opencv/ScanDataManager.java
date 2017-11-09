@@ -106,4 +106,9 @@ public final class ScanDataManager extends Observable implements ResReplacement 
     public int getGenerating() {
         return DocumentScan.resReplacement != null ? DocumentScan.resReplacement.getGenerating() : R.string.generating;
     }
+
+    @Override
+    public int getPdfName() {
+        return DocumentScan.resReplacement != null ? DocumentScan.resReplacement.getPdfName() : R.string.pdf_name;
+    }
 }

@@ -93,6 +93,11 @@ public class ScanActivity extends AppCompatActivity implements ScanDataInterface
             public int getGenerating() {
                 return R.string.generating;
             }
+
+            @Override
+            public int getPdfName() {
+                return R.string.pdf_name;
+            }
         });
         if (savedInstanceState != null) {
             Utils.clearFolder(Utils.getPictureFolder(this));
@@ -179,7 +184,7 @@ public class ScanActivity extends AppCompatActivity implements ScanDataInterface
 
     @Override
     public void onCameraException(Exception e) {
-        
+
     }
 
     @Override
