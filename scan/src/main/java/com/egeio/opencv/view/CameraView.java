@@ -163,22 +163,22 @@ public class CameraView extends SurfaceView implements SurfaceHolder.Callback, C
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-        if (camera == null) {
-            return;
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            camera.enableShutterSound(true);
-        }
-        final Camera.Parameters params = camera.getParameters();
+            if (camera == null) {
+                return;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                camera.enableShutterSound(true);
+            }
+            final Camera.Parameters params = camera.getParameters();
 //          params.setSceneMode(Camera.Parameters.SCENE_MODE_BARCODE);
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        Camera.Size bestPreviewSize = findBestPreviewSize(params);
-        Camera.Size bestPictureSize = findBestPictureSize(params, bestPreviewSize);
-        params.setPreviewSize(bestPreviewSize.width, bestPreviewSize.height);
-        params.setPictureSize(bestPictureSize.width, bestPictureSize.height);
-        camera.setParameters(params);
-        camera.setDisplayOrientation(Utils.getCameraOrientation(getContext()));
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
+            Camera.Size bestPreviewSize = findBestPreviewSize(params);
+            Camera.Size bestPictureSize = findBestPictureSize(params, bestPreviewSize);
+            params.setPreviewSize(bestPreviewSize.width, bestPreviewSize.height);
+            params.setPictureSize(bestPictureSize.width, bestPictureSize.height);
+            camera.setParameters(params);
+            camera.setDisplayOrientation(Utils.getCameraOrientation(getContext()));
+        }
     }
 
     private Camera.Size findBestPictureSize(Camera.Parameters parameters, Camera.Size previewSize) {

@@ -58,7 +58,7 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation project(':openCVLibrary331')
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:27.0.2'
     implementation 'com.itextpdf:itextpdf:5.5.12'
 }
 

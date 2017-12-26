@@ -35,7 +35,7 @@ public class EditFragment extends BaseScanFragment {
         return fragment;
     }
 
-    private View mContainer;
+    private View mMainView;
     private ViewPager viewPager;
     private View areaCrop, areaOptimize, areaRotate, areaDelete;
     private ImageView imageOptimize;
@@ -64,11 +64,9 @@ public class EditFragment extends BaseScanFragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        if (mContainer == null) {
-            mContainer = inflater.inflate(R.layout.fragment_edit, null);
-            initView();
-        }
-        return mContainer;
+        mMainView = inflater.inflate(R.layout.fragment_edit, null);
+        initView();
+        return mMainView;
     }
 
     @Override
@@ -79,19 +77,19 @@ public class EditFragment extends BaseScanFragment {
     }
 
     private void initView() {
-        viewPager = mContainer.findViewById(R.id.view_pager);
-        areaCrop = mContainer.findViewById(R.id.area_crop);
-        areaOptimize = mContainer.findViewById(R.id.area_optimize);
-        areaRotate = mContainer.findViewById(R.id.area_rotate);
-        areaDelete = mContainer.findViewById(R.id.area_delete);
-        imageOptimize = mContainer.findViewById(R.id.image_optimize);
-        textOptimize = mContainer.findViewById(R.id.text_optimize);
-        textCrop = mContainer.findViewById(R.id.text_crop);
-        textRotate = mContainer.findViewById(R.id.text_rotate);
-        textDelete = mContainer.findViewById(R.id.text_delete);
-        viewBack = mContainer.findViewById(R.id.view_back);
-        textTitle = mContainer.findViewById(R.id.text_title);
-        viewNext = mContainer.findViewById(R.id.text_next);
+        viewPager = mMainView.findViewById(R.id.view_pager);
+        areaCrop = mMainView.findViewById(R.id.area_crop);
+        areaOptimize = mMainView.findViewById(R.id.area_optimize);
+        areaRotate = mMainView.findViewById(R.id.area_rotate);
+        areaDelete = mMainView.findViewById(R.id.area_delete);
+        imageOptimize = mMainView.findViewById(R.id.image_optimize);
+        textOptimize = mMainView.findViewById(R.id.text_optimize);
+        textCrop = mMainView.findViewById(R.id.text_crop);
+        textRotate = mMainView.findViewById(R.id.text_rotate);
+        textDelete = mMainView.findViewById(R.id.text_delete);
+        viewBack = mMainView.findViewById(R.id.view_back);
+        textTitle = mMainView.findViewById(R.id.text_title);
+        viewNext = mMainView.findViewById(R.id.text_next);
 
         viewNext.setText(scanDataManager.getEditOver());
         textCrop.setText(scanDataManager.getCrop());

@@ -3,7 +3,7 @@
     <string name="cancel">取消</string>
     <string name="identifying">正在识别文档...</string>
     <string name="scanning">请勿移动，正在扫描...</string>
-    <string name="max_page_tip">扫描数量已达上限</string>
+    <string name="max_page_tip">Scanned number reached the limit</string>
     <string name="crop">裁剪</string>
     <string name="optimize">优化</string>
     <string name="rotate">旋转</string>

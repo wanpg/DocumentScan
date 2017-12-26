@@ -1,5 +1,7 @@
 package com.egeio.opencv;
 
+import android.support.annotation.MainThread;
+
 import com.egeio.opencv.model.ScanInfo;
 
 /**
@@ -14,6 +16,7 @@ public interface ScanDataInterface {
 
     void toEditPreview(ScanInfo scanInfo);
 
+    @MainThread
     void onPdfGenerated(String savePath);
 
     ScanDataManager getScanDataManager();

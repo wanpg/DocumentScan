@@ -1,15 +1,11 @@
 package com.egeio.document.scan;
 
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Window;
-import android.webkit.MimeTypeMap;
 
 import com.egeio.opencv.DocumentScan;
 import com.egeio.opencv.ResReplacement;
@@ -22,7 +18,6 @@ import com.egeio.opencv.fragment.ScanFragment;
 import com.egeio.opencv.model.ScanInfo;
 import com.egeio.opencv.tools.Utils;
 
-import java.io.File;
 import java.util.List;
 
 public class ScanActivity extends AppCompatActivity implements ScanDataInterface {
@@ -150,15 +145,13 @@ public class ScanActivity extends AppCompatActivity implements ScanDataInterface
 
     @Override
     public void onPdfGenerated(String savePath) {
-        String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(Utils.getFileExtension(savePath));
-        final File file = new File(savePath);
-        Uri uri = FileProvider.getUriForFile(this, "com.egeio.document.scan.fileprovider", file);    //第二个参数是manifest中定义的`authorities`
-        Intent intent = new Intent(Intent.ACTION_VIEW);
-        intent.putExtra(Intent.EXTRA_TITLE, file.getName());
-        intent.setDataAndType(uri, mimeType);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);    //这一步很重要。给目标应用一个临时的授权。
-        startActivity(intent);    //或者其它最终处理方式
+        getSupportFragmentManager().beginTransaction()
+                .setCustomAnimations(R.anim.slide_right_in, R.anim.slide_left_out, R.anim.slide_left_in, R.anim.slide_right_out)
+                .replace(Window.ID_ANDROID_CONTENT, ScanResultFragment.instance(savePath))
+                .addToBackStack(null)
+                .commit();
     }
+
 
     @Override
     public ScanDataManager getScanDataManager() {

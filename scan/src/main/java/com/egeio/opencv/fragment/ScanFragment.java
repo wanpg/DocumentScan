@@ -191,7 +191,7 @@ public class ScanFragment extends BaseScanFragment implements Observer, CameraVi
         if (cameraView != null) {
             cameraView.onResume();
         }
-        if (scanDataManager.getScanInfoSize() > MAX_PAGE_NUM) {
+        if (scanDataManager.getScanInfoSize() >= MAX_PAGE_NUM) {
             handler.sendEmptyMessage(MSG_SHOW_MAX_PAGE_TIP);
         } else {
             loadingInfoHolder.hideInfo();
